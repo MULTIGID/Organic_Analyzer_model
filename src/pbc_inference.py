@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
 import torch
 from PIL import Image
 
 from .data import build_transforms
+from .gradcam import render_gradcam_overlay
 from .model import load_checkpoint
 
 
@@ -41,7 +41,9 @@ class MulticlassPredictor:
             dict(zip(self.class_names, map(float, values), strict=True)),
         )
 
-    def grad_cam(self, image: Image.Image, class_name: str) -> Image.Image:
+    def grad_cam(
+        self, image: Image.Image, class_name: str, intensity: float = 0.55
+    ) -> Image.Image:
         if class_name not in self.class_indices:
             raise ValueError(f"Unknown checkpoint class: {class_name}")
         activations: list[torch.Tensor] = []
@@ -61,20 +63,11 @@ class MulticlassPredictor:
                 logits[0, self.class_indices[class_name]].backward()
             weights = gradients[0].mean(dim=(2, 3), keepdim=True)
             cam = torch.relu((weights * activations[0]).sum(dim=1)).squeeze()
-            cam -= cam.min()
-            cam /= cam.max().clamp_min(1e-8)
-            cam_array = (cam.cpu().numpy() * 255).astype(np.uint8)
+            cam_array = cam.cpu().numpy()
         finally:
             handle.remove()
 
-        base = image.convert("RGB")
-        heat = Image.fromarray(cam_array).resize(base.size, Image.Resampling.BILINEAR)
-        heat_values = np.asarray(heat, dtype=np.float32) / 255.0
-        color = np.zeros((*heat_values.shape, 3), dtype=np.uint8)
-        color[..., 0] = (255 * heat_values).astype(np.uint8)
-        color[..., 1] = (100 * np.sqrt(heat_values)).astype(np.uint8)
-        overlay = Image.fromarray(color, mode="RGB")
-        return Image.blend(base, overlay, alpha=0.42)
+        return render_gradcam_overlay(image, cam_array, intensity=intensity)
 
 
 class PBCPredictor(MulticlassPredictor):

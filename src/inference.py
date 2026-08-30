@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
 import torch
 from PIL import Image
 from torch import nn
 
 from .data import build_transforms
+from .gradcam import render_gradcam_overlay
 from .model import load_checkpoint
 
 
@@ -67,7 +67,7 @@ class PCamPredictor:
         confidence = probability if predicted_class else 1.0 - probability
         return Prediction(probability, predicted_class, label, confidence)
 
-    def grad_cam(self, image: Image.Image) -> Image.Image:
+    def grad_cam(self, image: Image.Image, intensity: float = 0.55) -> Image.Image:
         activations: list[torch.Tensor] = []
         gradients: list[torch.Tensor] = []
         target_layer: nn.Module = self.model.layer4[-1]
@@ -84,17 +84,8 @@ class PCamPredictor:
             logit.backward()
             weights = gradients[0].mean(dim=(2, 3), keepdim=True)
             cam = torch.relu((weights * activations[0]).sum(dim=1)).squeeze()
-            cam -= cam.min()
-            cam /= cam.max().clamp_min(1e-8)
-            cam_array = (cam.cpu().numpy() * 255).astype(np.uint8)
+            cam_array = cam.cpu().numpy()
         finally:
             forward_handle.remove()
 
-        base = image.convert("RGB")
-        heat = Image.fromarray(cam_array).resize(base.size, Image.Resampling.BILINEAR)
-        heat_values = np.asarray(heat, dtype=np.float32) / 255.0
-        color = np.zeros((*heat_values.shape, 3), dtype=np.uint8)
-        color[..., 0] = (255 * heat_values).astype(np.uint8)
-        color[..., 1] = (100 * np.sqrt(heat_values)).astype(np.uint8)
-        overlay = Image.fromarray(color, mode="RGB")
-        return Image.blend(base, overlay, alpha=0.42)
+        return render_gradcam_overlay(image, cam_array, intensity=intensity)

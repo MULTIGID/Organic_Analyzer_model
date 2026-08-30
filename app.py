@@ -288,6 +288,8 @@ TEXT = {
         "small_image": "The image is too small for reliable analysis.",
         "uploaded": "Uploaded image", "analyze": "Analyze image",
         "running": "Running {module} ResNet-50 analysis...", "gradcam": "Grad-CAM explanation",
+        "gradcam_intensity": "Grad-CAM intensity",
+        "gradcam_intensity_help": "Controls the visibility of highlighted image regions.",
         "positive_probability": "Positive-class probability", "predicted_class": "Predicted class",
         "confidence": "Model confidence", "positive": "Positive", "negative": "Negative",
         "pcam_positive": "Metastatic tissue detected",
@@ -350,6 +352,8 @@ TEXT = {
         "uploaded": "Завантажене зображення", "analyze": "Проаналізувати зображення",
         "running": "Виконується аналіз {module} за допомогою ResNet-50...",
         "gradcam": "Пояснення Grad-CAM", "positive_probability": "Імовірність позитивного класу",
+        "gradcam_intensity": "Інтенсивність Grad-CAM",
+        "gradcam_intensity_help": "Керує видимістю виділених ділянок зображення.",
         "predicted_class": "Прогнозований клас", "confidence": "Впевненість моделі",
         "positive": "Позитивний", "negative": "Негативний",
         "pcam_positive": "Виявлено метастатичну тканину",
@@ -667,6 +671,14 @@ with st.sidebar:
         format_func=lambda name: module_display_name(name, language),
     )
     display_module = module_display_name(module, language)
+    gradcam_intensity = st.slider(
+        text["gradcam_intensity"],
+        min_value=20,
+        max_value=80,
+        value=55,
+        step=5,
+        help=text["gradcam_intensity_help"],
+    ) / 100.0
 
     config_path = PROJECT_ROOT / CONFIG_NAMES[module]
     config = load_config(config_path)
@@ -782,7 +794,8 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
             )
             if predictor is None:
                 st.stop()
-            prediction, heatmap = predictor.predict(image), predictor.grad_cam(image)
+            prediction = predictor.predict(image)
+            heatmap = predictor.grad_cam(image, intensity=gradcam_intensity)
         result_text = text["pcam_positive"] if prediction.predicted_class else text["pcam_negative"]
         st.subheader(f"PCam — {text['predicted_class']}")
         a, b, c = st.columns([3, 1, 1])
@@ -807,7 +820,9 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
             if predictor is None:
                 st.stop()
             prediction = predictor.predict(image)
-            heatmap = predictor.grad_cam(image, prediction.class_name)
+            heatmap = predictor.grad_cam(
+                image, prediction.class_name, intensity=gradcam_intensity
+            )
         st.subheader(text["pbc_output"])
         a, b = st.columns([3, 1])
         with a:
@@ -827,7 +842,9 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
             if predictor is None:
                 st.stop()
             prediction = predictor.predict(image)
-            heatmap = predictor.grad_cam(image, prediction.class_name)
+            heatmap = predictor.grad_cam(
+                image, prediction.class_name, intensity=gradcam_intensity
+            )
         st.subheader(text["plant_output"])
         a, b = st.columns([3, 1])
         with a:
@@ -856,7 +873,9 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
                 result_class, result_confidence = max(
                     result_probabilities.items(), key=lambda item: item[1]
                 )
-            heatmap = predictor.grad_cam(image, result_class)
+            heatmap = predictor.grad_cam(
+                image, result_class, intensity=gradcam_intensity
+            )
         st.subheader(f"{display_module} — {text['predicted_class']}")
         metric_columns = [3, 1, 1] if kingdom_probability is not None else [3, 1]
         columns = st.columns(metric_columns)
