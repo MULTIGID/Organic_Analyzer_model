@@ -50,6 +50,12 @@ background_styles = (
         background: light-dark(rgba(248, 250, 252, 0.97), rgba(8, 17, 31, 0.94));
         backdrop-filter: blur(8px);
     }
+    [data-testid="stSidebar"] {
+        border-right: 1px solid light-dark(
+            rgba(71, 85, 105, 0.28),
+            rgba(148, 163, 184, 0.24)
+        );
+    }
     [data-testid="stAlert"] {
         color: light-dark(#0f172a, #f8fafc);
         border-color: light-dark(rgba(37, 99, 235, 0.28), rgba(96, 165, 250, 0.30));
