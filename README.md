@@ -7,7 +7,7 @@ Ukrainian, CPU inference, and compatible NVIDIA GPUs.
 > Model outputs require expert review. This application is not intended for
 > clinical diagnosis.
 
-[Українська версія README](README_UA.md)
+[English](README.md) | [Українська](README_UA.md) | [Installation](RUN_ON_ANOTHER_PC.md)
 
 ## Available modules
 

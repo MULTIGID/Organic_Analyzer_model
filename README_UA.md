@@ -1,6 +1,6 @@
 # Biological Image Analyzer
 
-[English README](README.md)
+[English](README.md) | [Українська](README_UA.md) | [Installation](RUN_ON_ANOTHER_PC.md)
 
 Дослідницький Streamlit-застосунок для класифікації біологічних і медичних
 зображень за допомогою окремих моделей ResNet-50. Інтерфейс підтримує англійську
