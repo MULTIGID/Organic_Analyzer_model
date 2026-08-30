@@ -180,7 +180,7 @@ python -m models.nct_crc.evaluate --device cuda
 ## Структура проєкту
 
 ```text
-pcam_resnet50_app/
+Organic_Analyzer_model/
 ├── app.py
 ├── start_app.bat
 ├── check_setup.py

@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
-$historyPath = "D:\NK\University_2\Диплом\Main_program\outputs\pcam_resnet50_app\results\inaturalist\training_history.json"
-$statusPath = "D:\NK\University_2\Диплом\Main_program\outputs\pcam_resnet50_app\shutdown_monitor_status.txt"
+$projectRoot = $PSScriptRoot
+$historyPath = Join-Path $projectRoot "results\inaturalist\training_history.json"
+$statusPath = Join-Path $projectRoot "shutdown_monitor_status.txt"
 $trainingProcessIds = @(26592, 20068)
 
 Set-Content -LiteralPath $statusPath -Encoding UTF8 -Value (
