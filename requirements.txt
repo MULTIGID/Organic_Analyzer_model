@@ -9,5 +9,4 @@ seaborn>=0.13,<1
 tqdm>=4.66,<5
 torch>=2.3,<3
 torchvision>=0.18,<1
-streamlit>=1.36,<2
-
+streamlit==1.62.0

@@ -8,18 +8,6 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import streamlit as st
-import torch
-from PIL import Image, UnidentifiedImageError
-
-from src.config import load_config
-from src.inference import PCamPredictor
-from src.input_validation import validate_module_input
-from src.pbc_inference import MulticlassPredictor, PBCPredictor
-from src.taxonomy import (
-    INATURALIST_DOMAIN_CLASS_COUNTS,
-    filter_inaturalist_probabilities,
-)
-from src.utils import resolve_device
 
 st.set_page_config(
     page_title="Histology ResNet-50 Analyzer",
@@ -235,6 +223,22 @@ page_loader.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Load the ML stack only after the page styles and custom loader reach the
+# browser. Importing PyTorch can otherwise leave Streamlit's default loader
+# visible for several seconds during a cold start.
+import torch  # noqa: E402
+from PIL import Image, UnidentifiedImageError  # noqa: E402
+
+from src.config import load_config  # noqa: E402
+from src.inference import PCamPredictor  # noqa: E402
+from src.input_validation import validate_module_input  # noqa: E402
+from src.pbc_inference import MulticlassPredictor, PBCPredictor  # noqa: E402
+from src.taxonomy import (  # noqa: E402
+    INATURALIST_DOMAIN_CLASS_COUNTS,
+    filter_inaturalist_probabilities,
+)
+from src.utils import resolve_device  # noqa: E402
 
 TEXT = {
     "EN": {
