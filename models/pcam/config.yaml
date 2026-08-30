@@ -1,0 +1,30 @@
+project:
+  name: "PCam ResNet-50 Analyzer"
+  seed: 42
+
+data:
+  root: "D:/NK/University_2/Диплом/Датасети/PCam"
+  image_size: 224
+  train_limit: null
+  validation_limit: null
+  test_limit: null
+
+model:
+  pretrained: true
+  positive_class_name: "Metastatic tissue detected"
+  negative_class_name: "No metastatic tissue detected"
+  decision_threshold: 0.5
+
+training:
+  epochs: 10
+  batch_size: 16
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  num_workers: 0
+  patience: 3
+  use_amp: true
+
+paths:
+  checkpoint: "../../checkpoints/resnet50_pcam_best.pt"
+  last_checkpoint: "../../checkpoints/resnet50_pcam_last.pt"
+  results_dir: "../../results"

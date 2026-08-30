@@ -1,0 +1,21 @@
+project:
+  name: "NIH Malaria ResNet-50"
+  seed: 42
+data:
+  root: "D:/NK/University_2/Диплом/Датасети/Malaria/cell_images"
+  image_size: 224
+model:
+  pretrained: true
+  num_classes: 2
+training:
+  epochs: 10
+  batch_size: 16
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  num_workers: 0
+  patience: 3
+  use_amp: true
+paths:
+  checkpoint: "../../checkpoints/malaria/resnet50_malaria_best.pt"
+  last_checkpoint: "../../checkpoints/malaria/resnet50_malaria_last.pt"
+  results_dir: "../../results/malaria"

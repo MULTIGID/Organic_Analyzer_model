@@ -1,0 +1,21 @@
+project:
+  name: "PathMNIST ResNet-50"
+  seed: 42
+data:
+  npz_path: "D:/NK/University_2/Диплом/Датасети/MedMNIST/pathmnist.npz"
+  image_size: 224
+model:
+  pretrained: true
+  num_classes: 9
+training:
+  epochs: 10
+  batch_size: 16
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  num_workers: 0
+  patience: 3
+  use_amp: true
+paths:
+  checkpoint: "../../checkpoints/medmnist/resnet50_pathmnist_best.pt"
+  last_checkpoint: "../../checkpoints/medmnist/resnet50_pathmnist_last.pt"
+  results_dir: "../../results/medmnist"
