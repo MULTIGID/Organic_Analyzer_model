@@ -1,56 +1,60 @@
 # Biological Image Analyzer
 
-Дослідницький Streamlit-застосунок для класифікації біологічних і медичних
-зображень за допомогою окремих моделей ResNet-50. Інтерфейс підтримує англійську
-та українську мови, CPU і сумісні NVIDIA GPU.
+A research-oriented Streamlit application for classifying biological and medical
+images with dedicated ResNet-50 models. The interface supports English and
+Ukrainian, CPU inference, and compatible NVIDIA GPUs.
 
-> Результат є прогнозом моделі, потребує перевірки фахівцем і не є медичним
-> діагнозом.
+> Model outputs require expert review. This application is not intended for
+> clinical diagnosis.
 
-## Модулі
+[Українська версія README](README_UA.md)
 
-| Модуль | Дані та завдання | Класи |
+## Available modules
+
+| Module | Dataset and task | Classes |
 |---|---|---:|
-| PCam | H&E-фрагменти лімфовузлів; виявлення метастатичної тканини | 2 |
-| PBC | Мікроскопічні зображення клітин периферичної крові | 8 |
-| PlantVillage | 14 культур, здорове листя та хвороби рослин | 38 |
-| NIH Malaria | Окремі заражені та незаражені клітини крові | 2 |
-| PathMNIST (MedMNIST) | Стандартизовані H&E-зображення тканин товстої кишки | 9 |
-| iNaturalist 2021 Mini | Тварини, рослини, гриби та інші організми | 10 000 |
-| NCT-CRC-HE-100K | H&E-фрагменти пухлинної, нормальної та інших тканин товстої кишки | 9 |
+| PCam | H&E lymph-node patches; metastatic tissue detection | 2 |
+| PBC | Microscopy images of peripheral blood cells | 8 |
+| PlantVillage | Healthy and diseased leaves from 14 crops | 38 |
+| NIH Malaria | Parasitized and uninfected individual blood cells | 2 |
+| PathMNIST (MedMNIST) | Standardized H&E colorectal tissue images | 9 |
+| iNaturalist 2021 Mini | Animals, plants, fungi, and other organisms | 10,000 |
+| NCT-CRC-HE-100K | Tumor, normal, and other colorectal tissue patches | 9 |
 
-Кожен модуль має власні файли навчання, оцінювання, конфігурацію, checkpoints і
-результати. Перемикання модуля в інтерфейсі не змінює checkpoint іншої моделі.
+Each module has separate training and evaluation files, configuration,
+checkpoints, and results. Switching modules in the interface does not modify any
+model checkpoint.
 
-## Можливості
+## Features
 
-- transfer learning ResNet-50 із вагами ImageNet;
-- mixed precision на сумісній NVIDIA GPU;
-- early stopping і продовження перерваного навчання;
-- окремі best і last checkpoints;
-- Accuracy, Precision, Recall, F1, AUC для відповідних задач;
-- confusion matrix та графіки історії навчання;
-- прогноз, упевненість і список найімовірніших класів у Streamlit;
-- Grad-CAM для всіх семи моделей;
-- посилання Google для пошуку інформації про прогнозовані класи;
-- не блокувальні перевірки якості вхідного зображення;
-- фільтрація iNaturalist за царствами Animalia, Plantae і Fungi;
-- адаптивний інтерфейс, світла і темна теми, українська й англійська мови.
+- ResNet-50 transfer learning with ImageNet initialization;
+- mixed-precision training on compatible NVIDIA GPUs;
+- early stopping and resumable training;
+- separate best and last checkpoints;
+- Accuracy, Precision, Recall, F1, and AUC where applicable;
+- confusion matrices and training-history charts;
+- predicted class, confidence, and top predictions in Streamlit;
+- Grad-CAM visualization for all seven models;
+- Google search links for predicted classes;
+- non-blocking input-image quality checks;
+- iNaturalist filtering by Animalia, Plantae, and Fungi;
+- responsive light and dark themes;
+- English and Ukrainian interface languages.
 
-## Системні вимоги
+## System requirements
 
-- Windows 10 або Windows 11;
-- 64-бітний Python 3.12 або 3.13; рекомендовано Python 3.12;
-- щонайменше 8 GB RAM, рекомендовано 16 GB;
-- приблизно 8 GB вільного місця для середовища та checkpoints;
-- NVIDIA GPU не обов’язкова для аналізу, але значно прискорює його.
+- Windows 10 or Windows 11;
+- 64-bit Python 3.12 or 3.13; Python 3.12 is recommended;
+- at least 8 GB RAM; 16 GB is recommended;
+- approximately 8 GB of free disk space for the environment and checkpoints;
+- an NVIDIA GPU is optional for inference but provides substantial acceleration.
 
-Датасети потрібні для навчання й оцінювання, але не потрібні для звичайного
-аналізу зображень через готові checkpoints.
+Training datasets are required for training and evaluation, but not for image
+analysis with existing checkpoints.
 
-## Встановлення
+## Installation
 
-Відкрийте PowerShell у кореневій папці, де знаходиться `app.py`:
+Open PowerShell in the project directory containing `app.py`:
 
 ```powershell
 python -m venv .venv
@@ -60,73 +64,88 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Якщо потрібна конкретна CUDA-збірка PyTorch, спочатку встановіть її командою з
-офіційного PyTorch Get Started, а потім виконайте встановлення requirements.
+If a specific CUDA build of PyTorch is required, install it using the command
+provided by the official PyTorch installation guide before installing the
+remaining requirements.
 
-Перевірка середовища:
+Verify the environment:
 
 ```powershell
 python check_setup.py
 python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 ```
 
-## Запуск застосунку
+## Running the application
 
-Подвійне натискання:
+On Windows, double-click:
 
 ```text
 start_app.bat
 ```
 
-Або через термінал:
+Alternatively, run it from a terminal:
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-Для доступу з телефону чи іншого пристрою в локальній мережі:
+To make the application available to phones or other devices on the local
+network:
 
 ```powershell
 python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
-На іншому пристрої відкрийте `http://LOCAL_IP:8501`. Брандмауер Windows має
-дозволяти Python або TCP-порт 8501 у приватній мережі.
+Open `http://LOCAL_IP:8501` on the other device. Windows Firewall must allow
+Python or TCP port 8501 on private networks.
 
-## Перевірка завантажених зображень
+## Checkpoints
 
-Перед аналізом застосунок виконує швидкі евристичні перевірки:
+Checkpoints are not stored in Git because several files exceed GitHub's regular
+file-size limit. Place the inference weights in the paths defined by each
+module's `config.yaml` file.
 
-- мінімальна роздільна здатність;
-- незвичне співвідношення сторін;
-- надто темне або надто світле зображення;
-- низький контраст і мала кількість деталей;
-- ймовірне розмиття;
-- незвична колірна мінливість для H&E-гістології або фотографії листка.
+- `*_best.pt` is used for inference and evaluation;
+- `*_last.pt` stores the latest training state and is used by `--resume`.
 
-Попередження не блокує аналіз. Це не OOD-детектор і не підтвердження того, що
-зображення належить потрібному датасету.
+The application can display a module whose checkpoint is missing, but that
+module cannot perform inference until its `*_best.pt` file is installed.
 
-## Конфігурації та датасети
+## Input-image checks
 
-Шляхи до даних і параметри знаходяться у `models/<module>/config.yaml`. На
-Windows у YAML рекомендовано використовувати `/`.
+Before inference, the application performs fast heuristic checks for:
 
-| Модуль | Конфігурація | Очікувані дані |
+- minimum resolution;
+- unusual aspect ratio;
+- excessively dark or bright images;
+- low contrast or insufficient detail;
+- possible blur;
+- unusual color variation for H&E histology or leaf photography.
+
+Warnings do not block inference. These checks are not an out-of-distribution
+detector and do not prove that an image belongs to the expected dataset.
+
+## Configurations and datasets
+
+Dataset paths and training parameters are stored in
+`models/<module>/config.yaml`. Forward slashes are recommended in Windows YAML
+paths.
+
+| Module | Configuration | Expected data |
 |---|---|---|
-| PCam | `models/pcam/config.yaml` | шість HDF5-файлів train/validation/test із `x` та `y` |
-| PBC | `models/pbc/config.yaml` | `Train`, `Val`, `Test`, у кожній папці 8 класів |
-| PlantVillage | `models/plantvillage/config.yaml` | повний репозиторій PlantVillage-Dataset |
-| NIH Malaria | `models/malaria/config.yaml` | `cell_images/Parasitized` і `cell_images/Uninfected` |
-| PathMNIST | `models/medmnist/config.yaml` | файл `pathmnist.npz` |
-| iNaturalist | `models/inaturalist/config.yaml` | `train_mini` і `val` із 10 000 папок класів |
-| NCT-CRC | `models/nct_crc/config.yaml` | `NCT-CRC-HE-100K` і незалежний `CRC-VAL-HE-7K` |
+| PCam | `models/pcam/config.yaml` | Six train/validation/test HDF5 files containing `x` and `y` |
+| PBC | `models/pbc/config.yaml` | `Train`, `Val`, and `Test`, each containing eight class folders |
+| PlantVillage | `models/plantvillage/config.yaml` | Complete PlantVillage-Dataset repository |
+| NIH Malaria | `models/malaria/config.yaml` | `cell_images/Parasitized` and `cell_images/Uninfected` |
+| PathMNIST | `models/medmnist/config.yaml` | `pathmnist.npz` |
+| iNaturalist | `models/inaturalist/config.yaml` | `train_mini` and `val` containing 10,000 class folders |
+| NCT-CRC | `models/nct_crc/config.yaml` | `NCT-CRC-HE-100K` and the independent `CRC-VAL-HE-7K` set |
 
-Датасети в цей репозиторій і переносний архів не входять.
+Datasets are not included in this repository.
 
-## Команди навчання
+## Training
 
-Спочатку рекомендовано виконати smoke test:
+Run a smoke test before starting full training:
 
 ```powershell
 python -m models.pcam.train --smoke-test --device cuda
@@ -138,17 +157,17 @@ python -m models.inaturalist.train --smoke-test --device cuda
 python -m models.nct_crc.train --smoke-test --device cuda
 ```
 
-Повне навчання виконується тією самою командою без `--smoke-test`. Щоб
-продовжити з last checkpoint, додайте `--resume`:
+For full training, use the same command without `--smoke-test`. To continue
+from the last checkpoint, add `--resume`:
 
 ```powershell
 python -m models.pbc.train --resume --device cuda
 ```
 
-`--resume` не потрібен після успішно завершеного навчання, якщо не планується
-збільшення загальної кількості епох.
+`--resume` is not required after successfully completed training unless the
+configured total number of epochs is increased.
 
-## Команди оцінювання
+## Evaluation
 
 ```powershell
 python -m models.pcam.evaluate --device cuda
@@ -160,24 +179,24 @@ python -m models.inaturalist.evaluate --device cuda
 python -m models.nct_crc.evaluate --device cuda
 ```
 
-Результати зберігаються окремо в `results/<module>/`, checkpoints — у
-`checkpoints/<module>/`. PCam зберігає основні артефакти без додаткової вкладеної
-папки для сумісності з початковою структурою проєкту.
+Results are written to `results/<module>/`, and checkpoints are written to
+`checkpoints/<module>/`. PCam stores its main artifacts directly under
+`checkpoints/` and `results/` for compatibility with the original layout.
 
-## Основні параметри конфігурації
+## Main configuration parameters
 
-- `epochs` — максимальна загальна кількість епох;
-- `batch_size` — кількість зображень в одному пакеті;
-- `learning_rate` — швидкість оновлення ваг;
-- `weight_decay` — L2-регуляризація;
-- `num_workers` — паралельні процеси читання даних;
-- `patience` — кількість епох без покращення до early stopping;
-- `use_amp` — mixed precision на CUDA.
+- `epochs`: maximum total number of epochs;
+- `batch_size`: number of images per batch;
+- `learning_rate`: optimizer learning rate;
+- `weight_decay`: L2 regularization;
+- `num_workers`: parallel data-loading processes;
+- `patience`: epochs without improvement before early stopping;
+- `use_amp`: mixed precision on CUDA.
 
-На Windows у разі помилок shared memory або paging file зменште `num_workers` до
-`0` або `1`. При `CUDA out of memory` зменште `batch_size`.
+On Windows, reduce `num_workers` to `0` or `1` if shared-memory or paging-file
+errors occur. Reduce `batch_size` if CUDA runs out of memory.
 
-## Структура проєкту
+## Project structure
 
 ```text
 Organic_Analyzer_model/
@@ -201,7 +220,7 @@ Organic_Analyzer_model/
 └── pyproject.toml
 ```
 
-## Тести для розробника
+## Developer checks
 
 ```powershell
 pip install -r requirements-dev.txt
@@ -209,22 +228,25 @@ ruff check .
 pytest -q
 ```
 
-Автоматичні тести не замінюють ручну перевірку кожного checkpoint на типових і
-нетипових зображеннях.
+Automated tests do not replace manual validation of every checkpoint on typical
+and atypical images.
 
-## Перенесення на інший ПК
+## Running on another PC
 
-Дивіться `RUN_ON_ANOTHER_PC.md`. Переносний ZIP містить код, assets і inference
-checkpoints, але не містить датасети, Python або готове віртуальне середовище.
+See [RUN_ON_ANOTHER_PC.md](RUN_ON_ANOTHER_PC.md). The repository contains the
+application code but does not contain datasets, Python, a virtual environment,
+or inference checkpoints.
 
-## Обмеження
+## Limitations
 
-- моделі працюють лише з класами відповідного навчального набору;
-- висока впевненість softmax не гарантує правильність прогнозу;
-- евристичні перевірки не розпізнають усі сторонні типи зображень;
-- Grad-CAM показує вплив ділянок на прогноз, але не підтверджує локалізацію патології;
-- iNaturalist використовує один checkpoint на всі 10 000 класів, після чого
-  інтерфейс фільтрує та нормалізує результати за вибраним царством;
-- якщо сумарна ймовірність вибраного царства мала, умовна впевненість усередині
-  нього не повинна трактуватися як надійне розпізнавання;
-- застосунок не призначений для клінічного використання.
+- Models recognize only the classes present in their respective training sets.
+- High softmax confidence does not guarantee a correct prediction.
+- Heuristic checks cannot detect every unsupported image type.
+- Grad-CAM indicates image regions influencing a prediction; it does not confirm
+  pathology localization.
+- iNaturalist uses one checkpoint for all 10,000 classes, after which the
+  interface filters and renormalizes results for the selected kingdom.
+- If the total probability assigned to a selected kingdom is low, conditional
+  confidence within that kingdom should not be interpreted as reliable
+  recognition.
+- The application is not intended for clinical use.
