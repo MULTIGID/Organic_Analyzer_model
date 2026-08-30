@@ -1,13 +1,13 @@
 # Biological Image Analyzer
 
+[English](README.md) | [Українська](README_UA.md) | [Installation](RUN_ON_ANOTHER_PC.md)
+
 A research-oriented Streamlit application for classifying biological and medical
 images with dedicated ResNet-50 models. The interface supports English and
 Ukrainian, CPU inference, and compatible NVIDIA GPUs.
 
 > Model outputs require expert review. This application is not intended for
 > clinical diagnosis.
-
-[English](README.md) | [Українська](README_UA.md) | [Installation](RUN_ON_ANOTHER_PC.md)
 
 ## Available modules
 
