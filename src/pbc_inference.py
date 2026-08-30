@@ -48,7 +48,7 @@ class MulticlassPredictor:
             raise ValueError(f"Unknown checkpoint class: {class_name}")
         activations: list[torch.Tensor] = []
         gradients: list[torch.Tensor] = []
-        target_layer = self.model.layer4[-1]
+        target_layer = self.model.layer4[-1].conv3
 
         def forward_hook(_module, _inputs, output):
             activations.append(output.detach())

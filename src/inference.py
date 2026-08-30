@@ -70,7 +70,7 @@ class PCamPredictor:
     def grad_cam(self, image: Image.Image, intensity: float = 0.55) -> Image.Image:
         activations: list[torch.Tensor] = []
         gradients: list[torch.Tensor] = []
-        target_layer: nn.Module = self.model.layer4[-1]
+        target_layer: nn.Module = self.model.layer4[-1].conv3
 
         def forward_hook(_module, _inputs, output):
             activations.append(output.detach())
