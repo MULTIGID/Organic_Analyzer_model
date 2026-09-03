@@ -237,9 +237,8 @@ import torch  # noqa: E402
 from PIL import Image, UnidentifiedImageError  # noqa: E402
 
 from src.config import load_config  # noqa: E402
-from src.inference import PCamPredictor  # noqa: E402
 from src.input_validation import validate_module_input  # noqa: E402
-from src.pbc_inference import MulticlassPredictor, PBCPredictor  # noqa: E402
+from src.multiclass_inference import MulticlassPredictor  # noqa: E402
 from src.taxonomy import (  # noqa: E402
     INATURALIST_DOMAIN_CLASS_COUNTS,
     filter_inaturalist_probabilities,
@@ -250,10 +249,10 @@ TEXT = {
     "EN": {
         "title": "Biological Image Analyzer",
         "subtitle": "ResNet-50 classification platform",
-        "caption": "Research prototype for PCam, PBC and PlantVillage classification",
+        "caption": "Research prototype for biological species classification",
         "disclaimer": "For research and education only. The result is a model prediction and requires expert review.",
         "settings": "Analysis settings", "language": "Language / Мова", "model": "Model",
-        "category": "Domain", "histology": "Histology", "blood": "Blood cells",
+        "category": "Domain",
         "animals": "Animals", "plants": "Plants", "mushrooms": "Mushrooms",
         "ready": "Model ready", "training_required": "Training required",
         "classes": "classes", "best_accuracy": "Best validation accuracy",
@@ -266,20 +265,8 @@ TEXT = {
         "category_mismatch": "The image probably does not belong to the selected domain: {domain}.",
         "google_search": "Search in Google",
         "device": "Device",
-        "pcam_task": "Detects metastatic breast cancer tissue in lymph-node microscopy images (2 classes).",
-        "pcam_input": "Upload one H&E-stained histology patch containing lymph-node tissue.",
-        "pbc_task": "Identifies 8 peripheral blood cell types, including lymphocytes, monocytes and granulocytes.",
-        "pbc_input": "Upload a microscope image containing one clearly visible, cropped blood cell.",
-        "plant_task": "Recognizes 14 crops and 38 healthy or diseased leaf classes.",
-        "plant_input": "Upload a clear photograph of one leaf, preferably on a simple background.",
-        "malaria_task": "Determines whether an individual red blood cell is infected with malaria (2 classes).",
-        "malaria_input": "Upload a microscope image of one segmented red blood cell.",
-        "medmnist_task": "PathMNIST distinguishes 9 colorectal tissue types in standardized histology images.",
-        "medmnist_input": "Upload a colorectal H&E tissue image similar to the PathMNIST samples.",
         "inaturalist_task": "Recognizes 10,000 species of animals, plants, fungi and other organisms from iNaturalist 2021 Mini.",
         "inaturalist_input": "Upload a clear nature photograph in which the organism is the main subject.",
-        "nct_task": "Distinguishes 9 colorectal tissue types, including tumor, stroma and normal tissue.",
-        "nct_input": "Upload a 224×224 H&E-stained colorectal tissue patch.",
         "checkpoint": "The {module} checkpoint was not found. Train it first with `{command}`.",
         "checkpoint_damaged": "The {module} checkpoint could not be loaded. The file may be damaged or incompatible. Restore a verified checkpoint and try again.",
         "upload": "Upload an image for {module}", "upload_hint": "Upload one image to begin.",
@@ -292,10 +279,6 @@ TEXT = {
         "gradcam_intensity_help": "Controls the visibility of highlighted image regions.",
         "positive_probability": "Positive-class probability", "predicted_class": "Predicted class",
         "confidence": "Model confidence", "positive": "Positive", "negative": "Negative",
-        "pcam_positive": "Metastatic tissue detected",
-        "pcam_negative": "No metastatic tissue detected",
-        "pbc_output": "PBC model output", "cell_type": "Predicted cell type",
-        "plant_output": "PlantVillage model output", "plant_class": "Predicted crop and condition",
         "probability": "Probability", "high": "High", "moderate": "Moderate", "low": "Low",
         "unreliable": "Input checks found unusual properties. Treat the prediction as unreliable.",
         "warning_too_small": "The image resolution is low for reliable analysis.",
@@ -312,10 +295,10 @@ TEXT = {
     "УКР": {
         "title": "Аналізатор біологічних зображень",
         "subtitle": "Платформа класифікації ResNet-50",
-        "caption": "Дослідницький прототип класифікації PCam, PBC і PlantVillage",
+        "caption": "Дослідницький прототип класифікації біологічних видів",
         "disclaimer": "Лише для досліджень і навчання. Результат є прогнозом моделі та потребує перевірки фахівцем.",
         "settings": "Налаштування аналізу", "language": "Мова / Language", "model": "Модель",
-        "category": "Напрям", "histology": "Гістологія", "blood": "Клітини крові",
+        "category": "Напрям",
         "animals": "Тварини", "plants": "Рослини", "mushrooms": "Гриби",
         "ready": "Модель готова", "training_required": "Потрібне навчання",
         "classes": "класів", "best_accuracy": "Найкраща валідаційна точність",
@@ -328,20 +311,8 @@ TEXT = {
         "category_mismatch": "Зображення, ймовірно, не належить до вибраного напряму: {domain}.",
         "google_search": "Знайти в Google",
         "device": "Пристрій",
-        "pcam_task": "Виявляє метастатичну тканину раку молочної залози на мікроскопічних зображеннях лімфовузлів (2 класи).",
-        "pcam_input": "Завантажте один H&E-забарвлений гістологічний фрагмент тканини лімфовузла.",
-        "pbc_task": "Розпізнає 8 типів клітин периферичної крові, зокрема лімфоцити, моноцити та гранулоцити.",
-        "pbc_input": "Завантажте мікроскопічне зображення однієї чітко видимої обрізаної клітини крові.",
-        "plant_task": "Розпізнає 14 сільськогосподарських культур і 38 класів здорового або ураженого листя.",
-        "plant_input": "Завантажте чітку фотографію одного листка, бажано на простому фоні.",
-        "malaria_task": "Визначає, чи заражена окрема клітина крові малярією (2 класи).",
-        "malaria_input": "Завантажте мікроскопічне зображення однієї сегментованої клітини крові.",
-        "medmnist_task": "PathMNIST розрізняє 9 типів тканин товстої кишки на стандартизованих гістологічних зображеннях.",
-        "medmnist_input": "Завантажте H&E-зображення тканини товстої кишки, подібне до зразків PathMNIST.",
         "inaturalist_task": "Розпізнає 10 000 видів тварин, рослин, грибів та інших організмів із iNaturalist 2021 Mini.",
         "inaturalist_input": "Завантажте чітку фотографію з природи, де організм є головним об’єктом кадру.",
-        "nct_task": "Розрізняє 9 типів тканин товстої кишки, зокрема пухлинну, строму та нормальну тканину.",
-        "nct_input": "Завантажте H&E-забарвлений фрагмент тканини товстої кишки розміром 224×224.",
         "checkpoint": "Checkpoint {module} не знайдено. Спочатку виконайте `{command}`.",
         "checkpoint_damaged": "Checkpoint {module} не вдалося завантажити. Файл може бути пошкодженим або несумісним. Відновіть перевірений checkpoint і повторіть спробу.",
         "upload": "Завантажте зображення для {module}",
@@ -356,11 +327,7 @@ TEXT = {
         "gradcam_intensity_help": "Керує видимістю виділених ділянок зображення.",
         "predicted_class": "Прогнозований клас", "confidence": "Впевненість моделі",
         "positive": "Позитивний", "negative": "Негативний",
-        "pcam_positive": "Виявлено метастатичну тканину",
-        "pcam_negative": "Метастатичну тканину не виявлено",
-        "pbc_output": "Результат моделі PBC", "cell_type": "Прогнозований тип клітини",
-        "plant_output": "Результат моделі PlantVillage",
-        "plant_class": "Прогнозована культура та стан", "probability": "Імовірність",
+        "probability": "Імовірність",
         "high": "Висока", "moderate": "Середня", "low": "Низька",
         "unreliable": "Перевірка виявила незвичні властивості. Вважайте прогноз ненадійним.",
         "warning_too_small": "Роздільна здатність зображення замала для надійного аналізу.",
@@ -376,147 +343,36 @@ TEXT = {
     },
 }
 
-PBC_UK = {"basophil": "базофіл", "eosinophil": "еозинофіл", "erythroblast": "еритробласт",
-          "ig": "незрілий гранулоцит", "lymphocyte": "лімфоцит", "monocyte": "моноцит",
-          "neutrophil": "нейтрофіл", "platelet": "тромбоцит"}
-PLANT_UK = {
-    "Apple___Apple_scab": "Яблуня — парша",
-    "Apple___Black_rot": "Яблуня — чорна гниль",
-    "Apple___Cedar_apple_rust": "Яблуня — кедрово-яблунева іржа",
-    "Apple___healthy": "Яблуня — здорова",
-    "Blueberry___healthy": "Лохина — здорова",
-    "Cherry_(including_sour)___Powdery_mildew": "Вишня або черешня — борошниста роса",
-    "Cherry_(including_sour)___healthy": "Вишня або черешня — здорова",
-    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Кукурудза — сіра плямистість",
-    "Corn_(maize)___Common_rust_": "Кукурудза — звичайна іржа",
-    "Corn_(maize)___Northern_Leaf_Blight": "Кукурудза — північний гельмінтоспоріоз",
-    "Corn_(maize)___healthy": "Кукурудза — здорова",
-    "Grape___Black_rot": "Виноград — чорна гниль",
-    "Grape___Esca_(Black_Measles)": "Виноград — еска",
-    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Виноград — плямистість листя",
-    "Grape___healthy": "Виноград — здоровий",
-    "Orange___Haunglongbing_(Citrus_greening)": "Апельсин — хуанлунбінг",
-    "Peach___Bacterial_spot": "Персик — бактеріальна плямистість",
-    "Peach___healthy": "Персик — здоровий",
-    "Pepper,_bell___Bacterial_spot": "Перець солодкий — бактеріальна плямистість",
-    "Pepper,_bell___healthy": "Перець солодкий — здоровий",
-    "Potato___Early_blight": "Картопля — рання гниль",
-    "Potato___Late_blight": "Картопля — фітофтороз",
-    "Potato___healthy": "Картопля — здорова",
-    "Raspberry___healthy": "Малина — здорова",
-    "Soybean___healthy": "Соя — здорова",
-    "Squash___Powdery_mildew": "Гарбуз — борошниста роса",
-    "Strawberry___Leaf_scorch": "Полуниця — опік листя",
-    "Strawberry___healthy": "Полуниця — здорова",
-    "Tomato___Bacterial_spot": "Томат — бактеріальна плямистість",
-    "Tomato___Early_blight": "Томат — рання гниль",
-    "Tomato___Late_blight": "Томат — фітофтороз",
-    "Tomato___Leaf_Mold": "Томат — листова пліснява",
-    "Tomato___Septoria_leaf_spot": "Томат — септоріозна плямистість",
-    "Tomato___Spider_mites Two-spotted_spider_mite": "Томат — павутинний кліщ",
-    "Tomato___Target_Spot": "Томат — мішенеподібна плямистість",
-    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Томат — вірус жовтої кучерявості листя",
-    "Tomato___Tomato_mosaic_virus": "Томат — вірус мозаїки",
-    "Tomato___healthy": "Томат — здоровий",
-}
-
 PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_NAMES = {
-    "PCam": "models/pcam/config.yaml",
-    "PBC": "models/pbc/config.yaml",
-    "PlantVillage": "models/plantvillage/config.yaml",
-    "NIH Malaria": "models/malaria/config.yaml",
-    "MedMNIST": "models/medmnist/config.yaml",
     "iNaturalist mini": "models/inaturalist/config.yaml",
-    "NCT-CRC-HE-100K": "models/nct_crc/config.yaml",
 }
 TRAIN_COMMANDS = {
-    "PCam": "python -m models.pcam.train",
-    "PBC": "python -m models.pbc.train",
-    "PlantVillage": "python -m models.plantvillage.train",
-    "NIH Malaria": "python models/malaria/train.py",
-    "MedMNIST": "python models/medmnist/train.py",
     "iNaturalist mini": "python models/inaturalist/train.py",
-    "NCT-CRC-HE-100K": "python models/nct_crc/train.py",
 }
 DOMAIN_MODELS = {
-    "histology": ("PCam", "NCT-CRC-HE-100K", "MedMNIST"),
-    "blood": ("PBC", "NIH Malaria"),
     "animals": ("iNaturalist mini",),
-    "plants": ("PlantVillage", "iNaturalist mini"),
+    "plants": ("iNaturalist mini",),
     "mushrooms": ("iNaturalist mini",),
 }
 MODULE_TASK_KEYS = {
-    "PCam": "pcam", "PBC": "pbc", "PlantVillage": "plant",
-    "NIH Malaria": "malaria", "MedMNIST": "medmnist",
-    "iNaturalist mini": "inaturalist", "NCT-CRC-HE-100K": "nct",
+    "iNaturalist mini": "inaturalist",
 }
 MODULE_ICONS = {
-    "PCam": "🔬", "PBC": "🩸", "PlantVillage": "🌿",
-    "NIH Malaria": "🦠", "MedMNIST": "🩺",
-    "iNaturalist mini": "🦋", "NCT-CRC-HE-100K": "🧫",
+    "iNaturalist mini": "🦋",
 }
 
-MODULE_DISPLAY_NAMES = {
-    "EN": {"MedMNIST": "PathMNIST (MedMNIST)"},
-    "УКР": {"MedMNIST": "PathMNIST (MedMNIST)"},
-}
+MODULE_DISPLAY_NAMES = {"EN": {}, "УКР": {}}
 
 
 def module_display_name(module: str, language: str) -> str:
     return MODULE_DISPLAY_NAMES[language].get(module, module)
 
-MODULE_CLASS_DESCRIPTIONS = {
-    "EN": {
-        "PCam": ("No metastatic tissue", "Metastatic tissue"),
-        "PBC": (
-            "Basophil", "Eosinophil", "Erythroblast", "Immature granulocyte",
-            "Lymphocyte", "Monocyte", "Neutrophil", "Platelet",
-        ),
-        "NIH Malaria": ("Parasitized", "Uninfected"),
-        "MedMNIST": (
-            "Adipose tissue", "Background", "Debris", "Lymphocytes", "Mucus",
-            "Smooth muscle", "Normal colon mucosa", "Cancer-associated stroma",
-            "Colorectal adenocarcinoma epithelium",
-        ),
-        "NCT-CRC-HE-100K": (
-            "Adipose tissue (ADI)", "Background (BACK)", "Debris (DEB)",
-            "Lymphocytes (LYM)", "Mucus (MUC)", "Smooth muscle (MUS)",
-            "Normal colon mucosa (NORM)", "Cancer-associated stroma (STR)",
-            "Colorectal adenocarcinoma epithelium (TUM)",
-        ),
-    },
-    "УКР": {
-        "PCam": ("Метастатичної тканини немає", "Метастатична тканина"),
-        "PBC": (
-            "Базофіл", "Еозинофіл", "Еритробласт", "Незрілий гранулоцит",
-            "Лімфоцит", "Моноцит", "Нейтрофіл", "Тромбоцит",
-        ),
-        "NIH Malaria": ("Заражена паразитом", "Незаражена"),
-        "MedMNIST": (
-            "Жирова тканина", "Фон", "Залишкові тканини", "Лімфоцити", "Слиз",
-            "Гладенькі м’язи", "Нормальна слизова товстої кишки",
-            "Строма, асоційована з раком", "Епітелій колоректальної аденокарциноми",
-        ),
-        "NCT-CRC-HE-100K": (
-            "Жирова тканина (ADI)", "Фон (BACK)", "Залишкові тканини (DEB)",
-            "Лімфоцити (LYM)", "Слиз (MUC)", "Гладенькі м’язи (MUS)",
-            "Нормальна слизова товстої кишки (NORM)",
-            "Строма, асоційована з раком (STR)",
-            "Епітелій колоректальної аденокарциноми (TUM)",
-        ),
-    },
-}
+MODULE_CLASS_DESCRIPTIONS = {"EN": {}, "УКР": {}}
 
 CHECKPOINT_VERSIONS = {module: "V1.0" for module in MODULE_ICONS}
 MODULE_DATASETS = {
-    "PCam": "PatchCamelyon (PCam)",
-    "PBC": "PBC Dataset",
-    "PlantVillage": "PlantVillage",
-    "NIH Malaria": "NIH Malaria Cell Images",
-    "MedMNIST": "PathMNIST / MedMNIST v2",
     "iNaturalist mini": "iNaturalist 2021 Mini",
-    "NCT-CRC-HE-100K": "NCT-CRC-HE-100K",
 }
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
@@ -563,27 +419,6 @@ def load_predictor_safely(loader, module: str, text: dict[str, str], *args):
 
 
 @st.cache_resource
-def load_pcam_predictor(config_path: str, checkpoint_mtime: float) -> PCamPredictor:
-    del checkpoint_mtime
-    config = load_config(config_path)
-    model, data = config.section("model"), config.section("data")
-    return PCamPredictor(
-        config.path("paths", "checkpoint"), resolve_device("auto"), int(data["image_size"]),
-        float(model["decision_threshold"]),
-        model["positive_class_name"],
-        model["negative_class_name"],
-    )
-
-
-@st.cache_resource
-def load_pbc_predictor(config_path: str, checkpoint_mtime: float) -> PBCPredictor:
-    del checkpoint_mtime
-    config = load_config(config_path)
-    return PBCPredictor(config.path("paths", "checkpoint"), resolve_device("auto"),
-                        int(config.section("data")["image_size"]))
-
-
-@st.cache_resource
 def load_multiclass_predictor(
     config_path: str, checkpoint_mtime: float
 ) -> MulticlassPredictor:
@@ -596,10 +431,6 @@ def load_multiclass_predictor(
 
 
 def readable_class(class_name: str, language: str) -> str:
-    if language == "УКР" and class_name in PBC_UK:
-        return PBC_UK[class_name]
-    if language == "УКР" and class_name in PLANT_UK:
-        return PLANT_UK[class_name]
     return class_name.replace("___", " — ").replace("_", " ")
 
 
@@ -685,8 +516,6 @@ with st.sidebar:
     checkpoint_path = config.path("paths", "checkpoint")
     task_key = MODULE_TASK_KEYS[module]
     class_count = int(config.section("model").get("num_classes", 2))
-    if module == "PCam":
-        class_count = 2
     if module == "iNaturalist mini":
         class_count = INATURALIST_DOMAIN_CLASS_COUNTS[domain]
     best_accuracy, checkpoint_updated, training_epoch = checkpoint_summary(
@@ -785,115 +614,32 @@ with left:
     st.image(image, use_container_width=True)
 
 if st.button(text["analyze"], type="primary", use_container_width=True):
-    heatmap = None
-    if module == "PCam":
-        with st.spinner(text["running"].format(module="PCam")):
-            predictor = load_predictor_safely(
-                load_pcam_predictor, display_module, text,
-                str(config_path), checkpoint_path.stat().st_mtime,
-            )
-            if predictor is None:
-                st.stop()
-            prediction = predictor.predict(image)
-            heatmap = predictor.grad_cam(image, intensity=gradcam_intensity)
-        result_text = text["pcam_positive"] if prediction.predicted_class else text["pcam_negative"]
-        st.subheader(f"PCam — {text['predicted_class']}")
-        a, b, c = st.columns([3, 1, 1])
-        with a:
-            render_prediction_card(result_text, "PCam", language, text)
-        b.metric(text["confidence"], f"{prediction.confidence:.1%}")
-        c.metric(text["positive_probability"], f"{prediction.probability:.1%}")
-        render_top_predictions(
-            {
-                text["pcam_positive"]: prediction.probability,
-                text["pcam_negative"]: 1.0 - prediction.probability,
-            },
-            "PCam", language, text, limit=2,
+    with st.spinner(text["running"].format(module=display_module)):
+        predictor = load_predictor_safely(
+            load_multiclass_predictor, display_module, text,
+            str(config_path), checkpoint_path.stat().st_mtime,
         )
-        (st.error if prediction.predicted_class else st.success)(result_text)
-    elif module == "PBC":
-        with st.spinner(text["running"].format(module="PBC")):
-            predictor = load_predictor_safely(
-                load_pbc_predictor, display_module, text,
-                str(config_path), checkpoint_path.stat().st_mtime,
-            )
-            if predictor is None:
-                st.stop()
-            prediction = predictor.predict(image)
-            heatmap = predictor.grad_cam(
-                image, prediction.class_name, intensity=gradcam_intensity
-            )
-        st.subheader(text["pbc_output"])
-        a, b = st.columns([3, 1])
-        with a:
-            render_prediction_card(
-                prediction.class_name, module, language, text, text["cell_type"]
-            )
-        b.metric(text["confidence"], f"{prediction.confidence:.1%}")
-        render_top_predictions(
-            prediction.probabilities, module, language, text, limit=8
+        if predictor is None:
+            st.stop()
+        prediction = predictor.predict(image)
+        result_probabilities, kingdom_probability = filter_inaturalist_probabilities(
+            prediction.probabilities, domain
         )
-    elif module == "PlantVillage":
-        with st.spinner(text["running"].format(module="PlantVillage")):
-            predictor = load_predictor_safely(
-                load_multiclass_predictor, display_module, text,
-                str(config_path), checkpoint_path.stat().st_mtime,
-            )
-            if predictor is None:
-                st.stop()
-            prediction = predictor.predict(image)
-            heatmap = predictor.grad_cam(
-                image, prediction.class_name, intensity=gradcam_intensity
-            )
-        st.subheader(text["plant_output"])
-        a, b = st.columns([3, 1])
-        with a:
-            render_prediction_card(
-                prediction.class_name, module, language, text, text["plant_class"]
-            )
-        b.metric(text["confidence"], f"{prediction.confidence:.1%}")
-        render_top_predictions(prediction.probabilities, module, language, text)
-    else:
-        with st.spinner(text["running"].format(module=display_module)):
-            predictor = load_predictor_safely(
-                load_multiclass_predictor, display_module, text,
-                str(config_path), checkpoint_path.stat().st_mtime,
-            )
-            if predictor is None:
-                st.stop()
-            prediction = predictor.predict(image)
-            result_class = prediction.class_name
-            result_confidence = prediction.confidence
-            result_probabilities = prediction.probabilities
-            kingdom_probability = None
-            if module == "iNaturalist mini":
-                result_probabilities, kingdom_probability = (
-                    filter_inaturalist_probabilities(prediction.probabilities, domain)
-                )
-                result_class, result_confidence = max(
-                    result_probabilities.items(), key=lambda item: item[1]
-                )
-            heatmap = predictor.grad_cam(
-                image, result_class, intensity=gradcam_intensity
-            )
-        st.subheader(f"{display_module} — {text['predicted_class']}")
-        metric_columns = [3, 1, 1] if kingdom_probability is not None else [3, 1]
-        columns = st.columns(metric_columns)
-        a, b = columns[0], columns[1]
-        with a:
-            render_prediction_card(result_class, module, language, text)
-        confidence_label = (
-            text["filtered_confidence"]
-            if kingdom_probability is not None else text["confidence"]
+        result_class, result_confidence = max(
+            result_probabilities.items(), key=lambda item: item[1]
         )
-        b.metric(confidence_label, f"{result_confidence:.1%}")
-        if kingdom_probability is not None:
-            columns[2].metric(text["category_probability"], f"{kingdom_probability:.1%}")
-            if kingdom_probability < 0.5:
-                st.warning(
-                    text["category_mismatch"].format(domain=text[domain])
-                )
-        render_top_predictions(result_probabilities, module, language, text)
+        heatmap = predictor.grad_cam(
+            image, result_class, intensity=gradcam_intensity
+        )
+    st.subheader(f"{display_module} — {text['predicted_class']}")
+    a, b, c = st.columns([3, 1, 1])
+    with a:
+        render_prediction_card(result_class, module, language, text)
+    b.metric(text["filtered_confidence"], f"{result_confidence:.1%}")
+    c.metric(text["category_probability"], f"{kingdom_probability:.1%}")
+    if kingdom_probability < 0.5:
+        st.warning(text["category_mismatch"].format(domain=text[domain]))
+    render_top_predictions(result_probabilities, module, language, text)
     if heatmap is not None:
         with right:
             st.subheader(text["gradcam"])

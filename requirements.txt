@@ -1,6 +1,4 @@
 numpy>=1.26,<3
-pandas>=2.2,<3
-h5py>=3.11,<4
 Pillow>=10.3,<12
 PyYAML>=6.0,<7
 scikit-learn>=1.5,<2

@@ -13,11 +13,81 @@ from torch import nn
 from torch.optim import AdamW
 from tqdm import tqdm
 
-from models.pbc.train import artifact_paths, run_epoch, save_pbc_checkpoint, save_plot
 from src.config import load_config
 from src.metrics import multiclass_metrics_from_predictions
 from src.model import create_resnet50, load_checkpoint
 from src.utils import resolve_device, save_json, set_seed
+
+
+def run_epoch(model, loader, criterion, device, optimizer=None, scaler=None, limit=None):
+    training = optimizer is not None
+    model.train(training)
+    loss_total = torch.zeros((), device=device)
+    count = 0
+    labels_all, predictions_all = [], []
+    for batch_index, (images, labels) in enumerate(tqdm(loader, leave=False)):
+        if limit is not None and batch_index >= limit:
+            break
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
+        if training:
+            optimizer.zero_grad(set_to_none=True)
+        amp_enabled = scaler is not None and device.type == "cuda"
+        with torch.set_grad_enabled(training), torch.autocast(
+            device_type=device.type, enabled=amp_enabled
+        ):
+            logits = model(images)
+            loss = criterion(logits, labels)
+        if training:
+            if scaler is not None:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+        loss_total += loss.detach() * labels.size(0)
+        count += labels.size(0)
+        if not training:
+            labels_all.extend(labels.cpu().tolist())
+            predictions_all.extend(logits.argmax(dim=1).cpu().tolist())
+    return float((loss_total / max(count, 1)).item()), labels_all, predictions_all
+
+
+def save_checkpoint(path, model, optimizer, epoch, best_accuracy, history, config, classes):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({
+        "model_state": model.state_dict(), "optimizer_state": optimizer.state_dict(),
+        "epoch": epoch, "best_accuracy": best_accuracy, "history": history,
+        "config": config, "num_classes": len(classes), "class_names": classes,
+    }, path)
+
+
+def artifact_paths(config, smoke_test: bool) -> tuple[Path, Path, Path]:
+    best_path = config.path("paths", "checkpoint")
+    last_path = config.path("paths", "last_checkpoint")
+    results_path = config.path("paths", "results_dir")
+    if smoke_test:
+        best_path = best_path.parent / "smoke" / best_path.name
+        last_path = last_path.parent / "smoke" / last_path.name
+        results_path = results_path / "smoke"
+    return best_path, last_path, results_path
+
+
+def save_plot(history, path):
+    epochs = [int(row["epoch"]) for row in history]
+    figure, axes = plt.subplots(1, 2, figsize=(10, 4))
+    axes[0].plot(epochs, [row["train_loss"] for row in history], label="Train")
+    axes[0].plot(epochs, [row["validation_loss"] for row in history], label="Validation")
+    axes[0].set_title("Loss")
+    axes[0].legend()
+    axes[1].plot(epochs, [row["validation_accuracy"] for row in history])
+    axes[1].set_title("Validation accuracy")
+    axes[1].set_ylim(0, 1)
+    figure.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, dpi=180)
+    plt.close(figure)
 
 
 def train_multiclass(config_path: Path, loader_factory, device_name, resume, smoke_test):
@@ -73,12 +143,12 @@ def train_multiclass(config_path: Path, loader_factory, device_name, resume, smo
                         "duration_seconds": time.perf_counter() - started})
         if accuracy > best_accuracy:
             best_accuracy, no_improvement = accuracy, 0
-            save_pbc_checkpoint(best_path, model, optimizer, epoch, best_accuracy,
-                                history, config.raw, classes)
+            save_checkpoint(best_path, model, optimizer, epoch, best_accuracy,
+                            history, config.raw, classes)
         else:
             no_improvement += 1
-        save_pbc_checkpoint(last_path, model, optimizer, epoch, best_accuracy,
-                            history, config.raw, classes)
+        save_checkpoint(last_path, model, optimizer, epoch, best_accuracy,
+                        history, config.raw, classes)
         save_json({"history": history, "best_accuracy": best_accuracy,
                    "class_names": classes}, results / "training_history.json")
         save_plot(history, results / "training_history.png")

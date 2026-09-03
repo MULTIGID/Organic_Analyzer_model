@@ -1,2 +1,1 @@
-"""PCam ResNet-50 application package."""
-
+"""Organic Analyzer application package."""

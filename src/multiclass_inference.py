@@ -6,13 +6,13 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from .data import build_transforms
 from .gradcam import render_gradcam_overlay
 from .model import load_checkpoint
+from .transforms import build_transforms
 
 
 @dataclass(frozen=True)
-class PBCPrediction:
+class MulticlassPrediction:
     class_name: str
     confidence: float
     probabilities: dict[str, float]
@@ -30,12 +30,12 @@ class MulticlassPredictor:
     def preprocess(self, image: Image.Image) -> torch.Tensor:
         return self.transform(image.convert("RGB")).unsqueeze(0).to(self.device)
 
-    def predict(self, image: Image.Image) -> PBCPrediction:
+    def predict(self, image: Image.Image) -> MulticlassPrediction:
         tensor = self.preprocess(image)
         with torch.inference_mode():
             values = torch.softmax(self.model(tensor), dim=1).squeeze(0).cpu().tolist()
         index = max(range(len(values)), key=values.__getitem__)
-        return PBCPrediction(
+        return MulticlassPrediction(
             self.class_names[index],
             float(values[index]),
             dict(zip(self.class_names, map(float, values), strict=True)),
@@ -68,10 +68,3 @@ class MulticlassPredictor:
             handle.remove()
 
         return render_gradcam_overlay(image, cam_array, intensity=intensity)
-
-
-class PBCPredictor(MulticlassPredictor):
-    def __init__(self, checkpoint_path: str | Path, device: torch.device, image_size: int) -> None:
-        super().__init__(checkpoint_path, device, image_size)
-        if len(self.class_names) != 8:
-            raise ValueError("PBC checkpoint must contain exactly 8 class names")
