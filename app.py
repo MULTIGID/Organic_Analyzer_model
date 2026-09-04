@@ -602,7 +602,7 @@ paste_result = paste_image_button(
     text_color="#ffffff",
     background_color="#ff4b4b",
     hover_background_color="#e63e3e",
-    key=f"paste-image-{module}",
+    key=f"paste-image-{module}-{language}",
     errors="raise",
 )
 st.caption(text["upload_or_paste"])
