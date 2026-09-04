@@ -611,7 +611,7 @@ for warning in warnings:
 left, right = st.columns(2)
 with left:
     st.subheader(text["uploaded"])
-    st.image(image, use_container_width=True)
+    st.image(image, width=400)
 
 if st.button(text["analyze"], type="primary", use_container_width=True):
     with st.spinner(text["running"].format(module=display_module)):
@@ -643,7 +643,7 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
     if heatmap is not None:
         with right:
             st.subheader(text["gradcam"])
-            st.image(heatmap, use_container_width=True)
+            st.image(heatmap, width=400)
     if warnings:
         st.warning(text["unreliable"])
     st.caption(text["review"])
