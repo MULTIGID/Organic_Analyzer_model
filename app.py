@@ -587,23 +587,28 @@ if not checkpoint_path.exists():
     command = TRAIN_COMMANDS[module]
     st.error(text["checkpoint"].format(module=display_module, command=command))
     st.stop()
-st.markdown(
-    f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
+upload_title_column, paste_button_column = st.columns(
+    [4, 1.3], vertical_alignment="center"
 )
+with upload_title_column:
+    st.markdown(
+        f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
+    )
+with paste_button_column:
+    paste_result = paste_image_button(
+        label=f"📋 {text['paste']}",
+        text_color="#ffffff",
+        background_color="#ff4b4b",
+        hover_background_color="#e63e3e",
+        key=f"paste-image-{module}-{language}",
+        errors="raise",
+    )
 uploaded = st.file_uploader(
     text["upload"].format(module=display_module),
     type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
     key=f"uploader-{module}",
     label_visibility="collapsed",
     max_upload_size=20,
-)
-paste_result = paste_image_button(
-    label=f"📋 {text['paste']}",
-    text_color="#ffffff",
-    background_color="#ff4b4b",
-    hover_background_color="#e63e3e",
-    key=f"paste-image-{module}-{language}",
-    errors="raise",
 )
 st.caption(text["upload_or_paste"])
 
