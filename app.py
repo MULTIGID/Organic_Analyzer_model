@@ -273,6 +273,7 @@ TEXT = {
         "upload": "Upload an image for {module}", "upload_hint": "Upload one image to begin.",
         "paste": "Paste from clipboard",
         "upload_or_paste": "Drag an image into the field, choose a file, or paste it from the clipboard.",
+        "clipboard_help": "Clipboard access requires HTTPS or localhost and browser permission.",
         "bad_image": "The uploaded file could not be read as an image.",
         "file_too_large": "The uploaded file is larger than 20 MB. Choose a smaller image.",
         "small_image": "The image is too small for reliable analysis.",
@@ -322,6 +323,7 @@ TEXT = {
         "upload_hint": "Завантажте одне зображення.",
         "paste": "Вставити з буфера обміну",
         "upload_or_paste": "Перетягніть зображення в поле, виберіть файл або вставте його з буфера обміну.",
+        "clipboard_help": "Доступ до буфера обміну потребує HTTPS або localhost і дозволу браузера.",
         "bad_image": "Завантажений файл не вдалося прочитати як зображення.",
         "file_too_large": "Розмір завантаженого файла перевищує 20 МБ. Виберіть менше зображення.",
         "small_image": "Зображення замале для надійного аналізу.",
@@ -601,7 +603,7 @@ with paste_button_column:
         background_color="#ff4b4b",
         hover_background_color="#e63e3e",
         key=f"paste-image-{module}-{language}",
-        errors="raise",
+        errors="ignore",
     )
 uploaded = st.file_uploader(
     text["upload"].format(module=display_module),
@@ -610,7 +612,7 @@ uploaded = st.file_uploader(
     label_visibility="collapsed",
     max_upload_size=20,
 )
-st.caption(text["upload_or_paste"])
+st.caption(f"{text['upload_or_paste']} {text['clipboard_help']}")
 
 active_bytes_key = f"active-image-bytes-{module}"
 last_upload_key = f"last-upload-id-{module}"
