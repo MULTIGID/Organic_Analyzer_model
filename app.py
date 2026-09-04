@@ -235,7 +235,6 @@ page_loader.markdown(
 # visible for several seconds during a cold start.
 import torch  # noqa: E402
 from PIL import Image, UnidentifiedImageError  # noqa: E402
-from streamlit_paste_button import paste_image_button  # noqa: E402
 
 from src.config import load_config  # noqa: E402
 from src.input_validation import validate_module_input  # noqa: E402
@@ -271,9 +270,6 @@ TEXT = {
         "checkpoint": "The {module} checkpoint was not found. Train it first with `{command}`.",
         "checkpoint_damaged": "The {module} checkpoint could not be loaded. The file may be damaged or incompatible. Restore a verified checkpoint and try again.",
         "upload": "Upload an image for {module}", "upload_hint": "Upload one image to begin.",
-        "paste": "Paste from clipboard",
-        "upload_or_paste": "Drag an image into the field, choose a file, or paste it from the clipboard.",
-        "clipboard_help": "Clipboard access requires HTTPS or localhost and browser permission.",
         "bad_image": "The uploaded file could not be read as an image.",
         "file_too_large": "The uploaded file is larger than 20 MB. Choose a smaller image.",
         "small_image": "The image is too small for reliable analysis.",
@@ -321,9 +317,6 @@ TEXT = {
         "checkpoint_damaged": "Checkpoint {module} не вдалося завантажити. Файл може бути пошкодженим або несумісним. Відновіть перевірений checkpoint і повторіть спробу.",
         "upload": "Завантажте зображення для {module}",
         "upload_hint": "Завантажте одне зображення.",
-        "paste": "Вставити з буфера обміну",
-        "upload_or_paste": "Перетягніть зображення в поле, виберіть файл або вставте його з буфера обміну.",
-        "clipboard_help": "Доступ до буфера обміну потребує HTTPS або localhost і дозволу браузера.",
         "bad_image": "Завантажений файл не вдалося прочитати як зображення.",
         "file_too_large": "Розмір завантаженого файла перевищує 20 МБ. Виберіть менше зображення.",
         "small_image": "Зображення замале для надійного аналізу.",
@@ -589,22 +582,9 @@ if not checkpoint_path.exists():
     command = TRAIN_COMMANDS[module]
     st.error(text["checkpoint"].format(module=display_module, command=command))
     st.stop()
-upload_title_column, paste_button_column = st.columns(
-    [4, 1.3], vertical_alignment="center"
+st.markdown(
+    f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
 )
-with upload_title_column:
-    st.markdown(
-        f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
-    )
-with paste_button_column:
-    paste_result = paste_image_button(
-        label=f"📋 {text['paste']}",
-        text_color="#ffffff",
-        background_color="#ff4b4b",
-        hover_background_color="#e63e3e",
-        key=f"paste-image-{module}-{language}",
-        errors="ignore",
-    )
 uploaded = st.file_uploader(
     text["upload"].format(module=display_module),
     type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
@@ -612,39 +592,14 @@ uploaded = st.file_uploader(
     label_visibility="collapsed",
     max_upload_size=20,
 )
-st.caption(f"{text['upload_or_paste']} {text['clipboard_help']}")
-
-active_bytes_key = f"active-image-bytes-{module}"
-last_upload_key = f"last-upload-id-{module}"
-last_paste_key = f"last-paste-signature-{module}"
-
-if uploaded is not None:
-    upload_bytes = uploaded.getvalue()
-    upload_id = getattr(uploaded, "file_id", None) or (
-        uploaded.name, uploaded.size, hash(upload_bytes)
-    )
-    if st.session_state.get(last_upload_key) != upload_id:
-        st.session_state[active_bytes_key] = upload_bytes
-        st.session_state[last_upload_key] = upload_id
-
-if paste_result.image_data is not None:
-    pasted_buffer = BytesIO()
-    paste_result.image_data.convert("RGB").save(pasted_buffer, format="PNG")
-    pasted_bytes = pasted_buffer.getvalue()
-    paste_signature = hash(pasted_bytes)
-    if st.session_state.get(last_paste_key) != paste_signature:
-        st.session_state[active_bytes_key] = pasted_bytes
-        st.session_state[last_paste_key] = paste_signature
-
-active_image_bytes = st.session_state.get(active_bytes_key)
-if active_image_bytes is None:
+if uploaded is None:
     st.write(text["upload_hint"])
     st.stop()
-if len(active_image_bytes) > MAX_UPLOAD_BYTES:
+if uploaded.size > MAX_UPLOAD_BYTES:
     st.error(text["file_too_large"])
     st.stop()
 try:
-    image = Image.open(BytesIO(active_image_bytes)).convert("RGB")
+    image = Image.open(BytesIO(uploaded.getvalue())).convert("RGB")
 except (UnidentifiedImageError, OSError):
     st.error(text["bad_image"])
     st.stop()
