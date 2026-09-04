@@ -592,7 +592,7 @@ st.markdown(
 )
 uploaded = st.file_uploader(
     text["upload"].format(module=display_module),
-    type=("png", "jpg", "jpeg", "tif", "tiff"),
+    type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
     key=f"uploader-{module}",
     label_visibility="collapsed",
     max_upload_size=20,
