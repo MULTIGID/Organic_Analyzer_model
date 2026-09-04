@@ -6,7 +6,7 @@ from .data import create_loaders
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train ResNet-50 on iNaturalist mini.")
+    parser = argparse.ArgumentParser(description="Train ResNet-50 on iNaturalist 2021 Full.")
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--smoke-test", action="store_true")

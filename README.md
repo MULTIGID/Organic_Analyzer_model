@@ -1,6 +1,6 @@
 # Organic Analyzer Model
 
-A bilingual Streamlit application for biological-species classification with a ResNet-50 model trained on **iNaturalist 2021 Mini**. The interface supports Animalia, Plantae, and Fungi filtering, top predictions, confidence indicators, input-quality warnings, Google search links, and Grad-CAM visualization.
+A bilingual Streamlit application for biological-species classification with a ResNet-50 model trained on **iNaturalist 2021 Full**. The interface supports Animalia, Plantae, and Fungi filtering, top predictions, confidence indicators, input-quality warnings, Google search links, and Grad-CAM visualization.
 
 Model output is intended for research and education and requires expert review.
 
@@ -8,7 +8,7 @@ Model output is intended for research and education and requires expert review.
 
 | Status | Dataset | Purpose | Scale |
 |---|---|---|---:|
-| Current | iNaturalist 2021 Mini | Classification of animals, plants, fungi, and other organisms | 10,000 classes; 500,000 training images |
+| Current | iNaturalist 2021 Full | Classification of animals, plants, fungi, and other organisms | 10,000 classes; 2,686,843 training images |
 | Planned | BIOSCAN-5M | Insect classification and multimodal taxonomy research | 5,150,808 specimens |
 
 BIOSCAN-5M code and checkpoints will be added after its training pipeline and data layout are finalized.

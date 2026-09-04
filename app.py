@@ -257,7 +257,7 @@ TEXT = {
         "ready": "Model ready", "training_required": "Training required",
         "classes": "classes", "best_accuracy": "Best validation accuracy",
         "checkpoint_updated": "Checkpoint date", "architecture": "ResNet-50",
-        "checkpoint_version": "Checkpoint version", "training_epoch": "Training epoch",
+        "training_epoch": "Training epoch",
         "dataset": "Dataset",
         "taxonomy_path": "Taxonomy", "top_predictions": "Top predictions",
         "category_probability": "Selected-domain probability",
@@ -265,7 +265,7 @@ TEXT = {
         "category_mismatch": "The image probably does not belong to the selected domain: {domain}.",
         "google_search": "Search in Google",
         "device": "Device",
-        "inaturalist_task": "Recognizes 10,000 species of animals, plants, fungi and other organisms from iNaturalist 2021 Mini.",
+        "inaturalist_task": "Recognizes 10,000 species of animals, plants, fungi and other organisms from iNaturalist 2021 Full.",
         "inaturalist_input": "Upload a clear nature photograph in which the organism is the main subject.",
         "checkpoint": "The {module} checkpoint was not found. Train it first with `{command}`.",
         "checkpoint_damaged": "The {module} checkpoint could not be loaded. The file may be damaged or incompatible. Restore a verified checkpoint and try again.",
@@ -303,7 +303,7 @@ TEXT = {
         "ready": "Модель готова", "training_required": "Потрібне навчання",
         "classes": "класів", "best_accuracy": "Найкраща валідаційна точність",
         "checkpoint_updated": "Дата checkpoint", "architecture": "ResNet-50",
-        "checkpoint_version": "Версія checkpoint", "training_epoch": "Епоха навчання",
+        "training_epoch": "Епоха навчання",
         "dataset": "Датасет",
         "taxonomy_path": "Таксономія", "top_predictions": "Найімовірніші класи",
         "category_probability": "Імовірність вибраного напряму",
@@ -311,7 +311,7 @@ TEXT = {
         "category_mismatch": "Зображення, ймовірно, не належить до вибраного напряму: {domain}.",
         "google_search": "Знайти в Google",
         "device": "Пристрій",
-        "inaturalist_task": "Розпізнає 10 000 видів тварин, рослин, грибів та інших організмів із iNaturalist 2021 Mini.",
+        "inaturalist_task": "Розпізнає 10 000 видів тварин, рослин, грибів та інших організмів із iNaturalist 2021 Full.",
         "inaturalist_input": "Завантажте чітку фотографію з природи, де організм є головним об’єктом кадру.",
         "checkpoint": "Checkpoint {module} не знайдено. Спочатку виконайте `{command}`.",
         "checkpoint_damaged": "Checkpoint {module} не вдалося завантажити. Файл може бути пошкодженим або несумісним. Відновіть перевірений checkpoint і повторіть спробу.",
@@ -345,21 +345,21 @@ TEXT = {
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_NAMES = {
-    "iNaturalist mini": "models/inaturalist/config.yaml",
+    "iNaturalist Full": "models/inaturalist/config.yaml",
 }
 TRAIN_COMMANDS = {
-    "iNaturalist mini": "python models/inaturalist/train.py",
+    "iNaturalist Full": "python models/inaturalist/train.py",
 }
 DOMAIN_MODELS = {
-    "animals": ("iNaturalist mini",),
-    "plants": ("iNaturalist mini",),
-    "mushrooms": ("iNaturalist mini",),
+    "animals": ("iNaturalist Full",),
+    "plants": ("iNaturalist Full",),
+    "mushrooms": ("iNaturalist Full",),
 }
 MODULE_TASK_KEYS = {
-    "iNaturalist mini": "inaturalist",
+    "iNaturalist Full": "inaturalist",
 }
 MODULE_ICONS = {
-    "iNaturalist mini": "🦋",
+    "iNaturalist Full": "🦋",
 }
 
 MODULE_DISPLAY_NAMES = {"EN": {}, "УКР": {}}
@@ -370,9 +370,8 @@ def module_display_name(module: str, language: str) -> str:
 
 MODULE_CLASS_DESCRIPTIONS = {"EN": {}, "УКР": {}}
 
-CHECKPOINT_VERSIONS = {module: "V1.0" for module in MODULE_ICONS}
 MODULE_DATASETS = {
-    "iNaturalist mini": "iNaturalist 2021 Mini",
+    "iNaturalist Full": "iNaturalist 2021 Full",
 }
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
@@ -437,7 +436,7 @@ def readable_class(class_name: str, language: str) -> str:
 def prediction_class_details(
     class_name: str, module: str, language: str
 ) -> tuple[str, str | None]:
-    if module != "iNaturalist mini":
+    if module != "iNaturalist Full":
         return readable_class(class_name, language), None
     taxonomy = class_name.split("_")
     if len(taxonomy) == 8 and taxonomy[0].isdigit():
@@ -516,7 +515,7 @@ with st.sidebar:
     checkpoint_path = config.path("paths", "checkpoint")
     task_key = MODULE_TASK_KEYS[module]
     class_count = int(config.section("model").get("num_classes", 2))
-    if module == "iNaturalist mini":
+    if module == "iNaturalist Full":
         class_count = INATURALIST_DOMAIN_CLASS_COUNTS[domain]
     best_accuracy, checkpoint_updated, training_epoch = checkpoint_summary(
         config, checkpoint_path
@@ -563,7 +562,6 @@ with st.sidebar:
         <div class="model-status model-status--{status_class}">
             <div class="model-status__state">● {status_text}</div>
             <div class="model-status__meta">{accuracy_line}{updated_line}{epoch_line}
-            {text['checkpoint_version']}: {CHECKPOINT_VERSIONS[module]}<br>
             {text['dataset']}: {MODULE_DATASETS[module]}<br>
             {text['device']}: {device_name}</div>
         </div>

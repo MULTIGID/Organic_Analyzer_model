@@ -1,5 +1,5 @@
 project:
-  name: "iNaturalist 2021 Mini ResNet-50"
+  name: "iNaturalist 2021 Full ResNet-50"
   seed: 42
 data:
   train_root: "G:/Datasets/iNaturalist2021_full/dataset/train"
