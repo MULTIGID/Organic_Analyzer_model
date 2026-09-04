@@ -76,8 +76,12 @@ def split_train_with_external_test(train_root: str | Path, test_root: str | Path
     return train, validation, collect_samples(test_path, classes), classes
 
 
-def create_loaders_from_samples(samples, classes, image_size, batch_size, num_workers):
-    train_transform, evaluation_transform = build_transforms(image_size)
+def create_loaders_from_samples(
+    samples, classes, image_size, batch_size, num_workers, gpu_augmentation=False
+):
+    train_transform, evaluation_transform = build_transforms(
+        image_size, gpu_augmentation=gpu_augmentation
+    )
     datasets = (
         FileListDataset(samples[0], train_transform),
         FileListDataset(samples[1], evaluation_transform),
@@ -99,9 +103,10 @@ def create_single_root_loaders(root, image_size, batch_size, num_workers):
 
 
 def create_external_test_loaders(
-    train_root, test_root, image_size, batch_size, num_workers
+    train_root, test_root, image_size, batch_size, num_workers, gpu_augmentation=False
 ):
     train, validation, test, classes = split_train_with_external_test(train_root, test_root)
     return create_loaders_from_samples(
-        (train, validation, test), classes, image_size, batch_size, num_workers
+        (train, validation, test), classes, image_size, batch_size, num_workers,
+        gpu_augmentation,
     )

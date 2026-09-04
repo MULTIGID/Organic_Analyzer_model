@@ -2,20 +2,21 @@ project:
   name: "iNaturalist 2021 Mini ResNet-50"
   seed: 42
 data:
-  train_root: "D:/NK/University_2/Диплом/Датасети/iNaturalist2021/train_mini"
-  test_root: "D:/NK/University_2/Диплом/Датасети/iNaturalist2021/val"
-  image_size: 224
+  train_root: "G:/Datasets/iNaturalist2021_full/dataset/train"
+  test_root: "G:/Datasets/iNaturalist2021_full/dataset/val"
+  image_size: 192
 model:
   pretrained: true
   num_classes: 10000
 training:
   epochs: 20
-  batch_size: 24
+  batch_size: 32
   learning_rate: 0.0001
   weight_decay: 0.0001
-  num_workers: 3
+  num_workers: 4
   patience: 3
   use_amp: true
+  gpu_augmentation: false
 paths:
   checkpoint: "../../checkpoints/inaturalist/resnet50_inaturalist_best.pt"
   last_checkpoint: "../../checkpoints/inaturalist/resnet50_inaturalist_last.pt"

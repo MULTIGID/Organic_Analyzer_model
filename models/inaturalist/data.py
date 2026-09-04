@@ -7,4 +7,5 @@ def create_loaders(config):
         config.path("data", "train_root"), config.path("data", "test_root"),
         int(data["image_size"]), int(training["batch_size"]),
         int(training["num_workers"]),
+        bool(training.get("gpu_augmentation", False)),
     )

@@ -14,12 +14,16 @@ from torch.optim import AdamW
 from tqdm import tqdm
 
 from src.config import load_config
+from src.gpu_augmentation import BatchImageAugmentation
 from src.metrics import multiclass_metrics_from_predictions
 from src.model import create_resnet50, load_checkpoint
 from src.utils import resolve_device, save_json, set_seed
 
 
-def run_epoch(model, loader, criterion, device, optimizer=None, scaler=None, limit=None):
+def run_epoch(
+    model, loader, criterion, device, optimizer=None, scaler=None, limit=None,
+    augmentation=None,
+):
     training = optimizer is not None
     model.train(training)
     loss_total = torch.zeros((), device=device)
@@ -30,6 +34,8 @@ def run_epoch(model, loader, criterion, device, optimizer=None, scaler=None, lim
             break
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
+        if training and augmentation is not None:
+            images = augmentation(images)
         if training:
             optimizer.zero_grad(set_to_none=True)
         amp_enabled = scaler is not None and device.type == "cuda"
@@ -112,6 +118,9 @@ def train_multiclass(config_path: Path, loader_factory, device_name, resume, smo
     scaler = torch.amp.GradScaler(
         "cuda", enabled=device.type == "cuda" and bool(training["use_amp"])
     )
+    augmentation = None
+    if bool(training.get("gpu_augmentation", False)):
+        augmentation = BatchImageAugmentation().to(device)
     best_path, last_path, results = artifact_paths(config, smoke_test)
     start_epoch, best_accuracy, history = 0, -1.0, []
     if resume:
@@ -129,7 +138,8 @@ def train_multiclass(config_path: Path, loader_factory, device_name, resume, smo
         started = time.perf_counter()
         limit = 2 if smoke_test else None
         train_loss, _, _ = run_epoch(
-            model, train_loader, criterion, device, optimizer, scaler, limit
+            model, train_loader, criterion, device, optimizer, scaler, limit,
+            augmentation,
         )
         validation_loss, labels, predictions = run_epoch(
             model, validation_loader, criterion, device, limit=limit
