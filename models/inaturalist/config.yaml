@@ -4,7 +4,7 @@ project:
 data:
   train_root: "G:/Datasets/iNaturalist2021_full/dataset/train"
   test_root: "G:/Datasets/iNaturalist2021_full/dataset/val"
-  image_size: 192
+  image_size: 224
 model:
   pretrained: true
   num_classes: 10000
