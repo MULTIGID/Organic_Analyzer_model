@@ -1,5 +1,7 @@
 # Organic Analyzer Model
 
+[<kbd>English</kbd>](README.md) [<kbd>Українська</kbd>](README_UA.md)
+
 A bilingual Streamlit application for biological-species classification with dedicated ResNet-50 models trained on **iNaturalist 2021 Full** and the image-only labeled subset of **BIOSCAN-5M**. The interface supports animals, insects, plants and fungi, top predictions, confidence indicators, input-quality warnings, Google search links, and Grad-CAM visualization.
 
 Model output is intended for research and education and requires expert review.
@@ -34,4 +36,4 @@ results/inaturalist/       Training and evaluation outputs
 tests/                     Automated tests
 ```
 
-[Українська версія README](README_UA.md) · [Run on another PC](RUN_ON_ANOTHER_PC.md)
+[Run on another PC](RUN_ON_ANOTHER_PC.md)
