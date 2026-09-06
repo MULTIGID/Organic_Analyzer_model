@@ -35,5 +35,3 @@ checkpoints/bioscan/       Checkpoints BIOSCAN і словник класів
 results/inaturalist/       Результати навчання та оцінювання
 tests/                     Автоматичні тести
 ```
-
-[Запуск на іншому ПК](RUN_ON_ANOTHER_PC.md)

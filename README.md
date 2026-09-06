@@ -35,5 +35,3 @@ checkpoints/bioscan/       Best/latest BIOSCAN checkpoints and class mapping
 results/inaturalist/       Training and evaluation outputs
 tests/                     Automated tests
 ```
-
-[Run on another PC](RUN_ON_ANOTHER_PC.md)

@@ -6,10 +6,10 @@ set "APP_PYTHON=%~dp0.venv\Scripts\python.exe"
 
 if not exist "%APP_PYTHON%" (
     echo Virtual environment not found.
-    echo Run the installation commands from RUN_ON_ANOTHER_PC.md first.
+    echo Create .venv and install the packages from requirements.txt first.
     echo.
     echo Віртуальне середовище не знайдено.
-    echo Спочатку виконайте команди встановлення з RUN_ON_ANOTHER_PC.md.
+    echo Спочатку створіть .venv та встановіть пакети з requirements.txt.
     pause
     exit /b 1
 )
