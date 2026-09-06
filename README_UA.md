@@ -21,30 +21,6 @@ python -m venv .venv
 
 Checkpoints мають бути розміщені в `checkpoints/inaturalist` і `checkpoints/bioscan`.
 
-## Навчання та оцінювання iNaturalist
-
-Спочатку вкажіть шляхи до датасету у `models/inaturalist/config.yaml`, а потім виконайте:
-
-```powershell
-.\.venv\Scripts\python.exe -m models.inaturalist.train --device cuda
-.\.venv\Scripts\python.exe -m models.inaturalist.train --resume --device cuda
-.\.venv\Scripts\python.exe -m models.inaturalist.evaluate --device cuda
-```
-
-На комп’ютері без сумісної NVIDIA GPU використовуйте `--device cpu`.
-
-## Навчання та оцінювання BIOSCAN-5M
-
-Спочатку вкажіть шляхи до датасету у `models/bioscan/config.yaml`, а потім виконайте:
-
-```powershell
-.\.venv\Scripts\python.exe -m models.bioscan.train
-.\.venv\Scripts\python.exe -m models.bioscan.train --resume --epochs 20
-.\.venv\Scripts\python.exe -m models.bioscan.evaluate --device cuda
-```
-
-Для навчання BIOSCAN використовуються лише зображення й таксономічні мітки видів; ДНК-штрихкоди не використовуються.
-
 ## Структура проєкту
 
 ```text

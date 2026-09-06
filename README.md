@@ -21,30 +21,6 @@ python -m venv .venv
 
 The checkpoints must be stored under `checkpoints/inaturalist` and `checkpoints/bioscan`.
 
-## Train and evaluate iNaturalist
-
-Update the dataset paths in `models/inaturalist/config.yaml`, then run:
-
-```powershell
-.\.venv\Scripts\python.exe -m models.inaturalist.train --device cuda
-.\.venv\Scripts\python.exe -m models.inaturalist.train --resume --device cuda
-.\.venv\Scripts\python.exe -m models.inaturalist.evaluate --device cuda
-```
-
-Use `--device cpu` without a compatible NVIDIA GPU.
-
-## Train and evaluate BIOSCAN-5M
-
-Update the dataset paths in `models/bioscan/config.yaml`, then run:
-
-```powershell
-.\.venv\Scripts\python.exe -m models.bioscan.train
-.\.venv\Scripts\python.exe -m models.bioscan.train --resume --epochs 20
-.\.venv\Scripts\python.exe -m models.bioscan.evaluate --device cuda
-```
-
-BIOSCAN training uses images and taxonomic species labels only; DNA barcodes are not used.
-
 ## Project structure
 
 ```text
