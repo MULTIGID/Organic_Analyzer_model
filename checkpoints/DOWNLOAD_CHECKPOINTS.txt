@@ -1,0 +1,35 @@
+CHECKPOINT DOWNLOAD / ЗАВАНТАЖЕННЯ CHECKPOINTS
+================================================
+
+Download link / Посилання для завантаження:
+[PASTE_CHECKPOINT_DOWNLOAD_LINK_HERE]
+
+EN
+--
+Download the checkpoint archive using the link above and extract its contents
+directly into this "checkpoints" folder. Do not create an additional nested
+"checkpoints/checkpoints" directory.
+
+The resulting structure must be:
+
+checkpoints/
+  inaturalist/
+    resnet50_inaturalist_best.pt
+  bioscan/
+    bioscan_species_resnet50_best.pt
+    classes.json
+
+UA
+--
+Завантажте архів із checkpoints за посиланням вище та розпакуйте його вміст
+безпосередньо в цю папку "checkpoints". Не створюйте додаткову вкладену папку
+"checkpoints/checkpoints".
+
+Після розпакування структура має бути такою:
+
+checkpoints/
+  inaturalist/
+    resnet50_inaturalist_best.pt
+  bioscan/
+    bioscan_species_resnet50_best.pt
+    classes.json

@@ -9,7 +9,8 @@ __pycache__/
 .kaggle/
 kaggle.json
 data/
-checkpoints/
+checkpoints/*
+!checkpoints/DOWNLOAD_CHECKPOINTS.txt
 results/*
 !results/.gitkeep
 logs/*
