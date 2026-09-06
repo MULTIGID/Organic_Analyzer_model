@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import logging
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -239,18 +240,38 @@ page_loader.markdown(
 # Load the ML stack only after the page styles and custom loader reach the
 # browser. Importing PyTorch can otherwise leave Streamlit's default loader
 # visible for several seconds during a cold start.
-import torch  # noqa: E402
-from PIL import Image, UnidentifiedImageError  # noqa: E402
+try:
+    import torch  # noqa: E402
+    from PIL import Image, UnidentifiedImageError  # noqa: E402
 
-from src.config import load_config  # noqa: E402
-from src.input_validation import validate_module_input  # noqa: E402
-from src.multiclass_inference import MulticlassPredictor  # noqa: E402
-from src.taxonomy import (  # noqa: E402
-    INATURALIST_DOMAIN_CLASS_COUNTS,
-    filter_inaturalist_probabilities,
-    format_inaturalist_taxonomy,
-)
-from src.utils import resolve_device  # noqa: E402
+    from src.config import load_config  # noqa: E402
+    from src.input_validation import validate_module_input  # noqa: E402
+    from src.multiclass_inference import MulticlassPredictor  # noqa: E402
+    from src.taxonomy import (  # noqa: E402
+        INATURALIST_DOMAIN_CLASS_COUNTS,
+        filter_inaturalist_probabilities,
+        format_inaturalist_taxonomy,
+    )
+    from src.utils import resolve_device  # noqa: E402
+except ModuleNotFoundError:
+    logging.exception("A required application dependency is missing")
+    page_loader.empty()
+    st.error(
+        "A required component is missing. Install the dependencies from "
+        "requirements.txt and restart the application. / Необхідний компонент "
+        "відсутній. Установіть залежності з requirements.txt і перезапустіть програму."
+    )
+    st.stop()
+except ImportError:
+    logging.exception("Application modules are incomplete or incompatible")
+    page_loader.empty()
+    st.error(
+        "The application files are incomplete or belong to different versions. "
+        "Update or copy the entire project and restart it. / Файли програми неповні "
+        "або належать до різних версій. Оновіть чи скопіюйте весь проєкт і "
+        "перезапустіть його."
+    )
+    st.stop()
 
 TEXT = {
     "EN": {
