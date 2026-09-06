@@ -1,6 +1,10 @@
 import pytest
 
-from src.taxonomy import filter_inaturalist_probabilities, inaturalist_kingdom
+from src.taxonomy import (
+    filter_inaturalist_probabilities,
+    format_inaturalist_taxonomy,
+    inaturalist_kingdom,
+)
 
 
 PROBABILITIES = {
@@ -30,6 +34,16 @@ def test_insect_filter_uses_insecta_taxonomic_class():
 
     assert mass == pytest.approx(0.25)
     assert filtered == {insect: pytest.approx(1.0)}
+
+
+def test_taxonomy_path_is_translated_for_ukrainian_interface():
+    taxa = ["Animalia", "Chordata", "Mammalia", "Carnivora", "Canidae"]
+
+    assert format_inaturalist_taxonomy(taxa, "УКР") == (
+        "Царство: Тварини · Тип: Хордові · Клас: Ссавці · "
+        "Ряд: Хижі · Родина: Псові"
+    )
+    assert format_inaturalist_taxonomy(taxa, "EN") == " › ".join(taxa)
 
 
 def test_unknown_domain_is_rejected():

@@ -18,6 +18,44 @@ INATURALIST_DOMAIN_CLASS_COUNTS = {
     "plants": 4271,
     "mushrooms": 341,
 }
+UKRAINIAN_TAXONOMY_RANKS = ("Царство", "Тип", "Клас", "Ряд", "Родина")
+UKRAINIAN_TAXON_NAMES = {
+    "Animalia": "Тварини",
+    "Plantae": "Рослини",
+    "Fungi": "Гриби",
+    "Chordata": "Хордові",
+    "Arthropoda": "Членистоногі",
+    "Mollusca": "Молюски",
+    "Annelida": "Кільчасті черви",
+    "Cnidaria": "Кишковопорожнинні",
+    "Echinodermata": "Голкошкірі",
+    "Tracheophyta": "Судинні рослини",
+    "Ascomycota": "Аскомікотові гриби",
+    "Basidiomycota": "Базидіомікотові гриби",
+    "Mammalia": "Ссавці",
+    "Aves": "Птахи",
+    "Reptilia": "Плазуни",
+    "Amphibia": "Земноводні",
+    "Actinopterygii": "Променепері риби",
+    "Insecta": "Комахи",
+    "Arachnida": "Павукоподібні",
+    "Magnoliopsida": "Дводольні",
+    "Liliopsida": "Однодольні",
+    "Carnivora": "Хижі",
+    "Primates": "Примати",
+    "Rodentia": "Гризуни",
+    "Artiodactyla": "Парнокопитні",
+    "Lagomorpha": "Зайцеподібні",
+    "Chiroptera": "Рукокрилі",
+    "Passeriformes": "Горобцеподібні",
+    "Lepidoptera": "Лускокрилі",
+    "Coleoptera": "Твердокрилі",
+    "Hymenoptera": "Перетинчастокрилі",
+    "Diptera": "Двокрилі",
+    "Canidae": "Псові",
+    "Felidae": "Котові",
+    "Ursidae": "Ведмедеві",
+}
 
 
 def inaturalist_kingdom(class_name: str) -> str | None:
@@ -25,6 +63,15 @@ def inaturalist_kingdom(class_name: str) -> str | None:
     if len(parts) >= 3 and parts[0].isdigit():
         return parts[1]
     return None
+
+
+def format_inaturalist_taxonomy(taxa: list[str], language: str) -> str:
+    if language != "УКР":
+        return " › ".join(taxa)
+    return " · ".join(
+        f"{rank}: {UKRAINIAN_TAXON_NAMES.get(taxon, taxon)}"
+        for rank, taxon in zip(UKRAINIAN_TAXONOMY_RANKS, taxa)
+    )
 
 
 def filter_inaturalist_probabilities(

@@ -248,6 +248,7 @@ from src.multiclass_inference import MulticlassPredictor  # noqa: E402
 from src.taxonomy import (  # noqa: E402
     INATURALIST_DOMAIN_CLASS_COUNTS,
     filter_inaturalist_probabilities,
+    format_inaturalist_taxonomy,
 )
 from src.utils import resolve_device  # noqa: E402
 
@@ -555,7 +556,7 @@ def prediction_class_details(
     taxonomy = class_name.split("_")
     if len(taxonomy) == 8 and taxonomy[0].isdigit():
         species_name = f"{taxonomy[6]} {taxonomy[7]}"
-        taxonomy_path = " › ".join(taxonomy[1:6])
+        taxonomy_path = format_inaturalist_taxonomy(taxonomy[1:6], language)
         return species_name, f"ID {taxonomy[0]} · {taxonomy_path}"
     return readable_class(class_name, language), None
 
