@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import re
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -473,6 +474,18 @@ def cache_uploaded_image() -> None:
     st.session_state[UPLOAD_NAME_KEY] = uploaded_file.name
 
 
+def is_mobile_client() -> bool:
+    try:
+        headers = st.context.headers
+        user_agent = headers.get("User-Agent", "")
+        client_hint = headers.get("Sec-CH-UA-Mobile", "")
+    except (AttributeError, RuntimeError):
+        return False
+    return client_hint == "?1" or bool(
+        re.search(r"Android|iPhone|iPad|iPod|Mobile", user_agent, re.IGNORECASE)
+    )
+
+
 def enable_page_wide_image_drop() -> None:
     """Forward an image dropped anywhere on the page to the file uploader."""
     components.html(
@@ -738,7 +751,12 @@ if not checkpoint_path.exists():
     command = TRAIN_COMMANDS[module]
     st.error(text["checkpoint"].format(module=display_module, command=command))
     st.stop()
-upload_column, preview_column = st.columns([3, 1], vertical_alignment="top")
+mobile_client = is_mobile_client()
+if mobile_client:
+    upload_column = st.container()
+    preview_column = None
+else:
+    upload_column, preview_column = st.columns([3, 1], vertical_alignment="top")
 with upload_column:
     st.markdown(
         f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
@@ -772,9 +790,16 @@ warning_codes = validate_module_input(image, module)
 warnings = [text[f"warning_{code}"] for code in warning_codes]
 for warning in warnings:
     st.warning(warning)
-with preview_column:
-    st.subheader(text["uploaded"])
-    st.image(image, width=250)
+mobile_heatmap_column = None
+if mobile_client:
+    mobile_image_column, mobile_heatmap_column = st.columns(2)
+    with mobile_image_column:
+        st.subheader(text["uploaded"])
+        st.image(image, width=250)
+else:
+    with preview_column:
+        st.subheader(text["uploaded"])
+        st.image(image, width=250)
 
 if st.button(text["analyze"], type="primary", use_container_width=True):
     with st.spinner(text["running"].format(module=display_module)):
@@ -798,21 +823,48 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
         heatmap = predictor.grad_cam(
             image, result_class, intensity=gradcam_intensity
         )
-    explanation_column, prediction_column = st.columns(2, vertical_alignment="top")
-    with explanation_column:
+    if mobile_client:
         if heatmap is not None:
-            st.subheader(text["gradcam"])
-            st.image(heatmap, width=250)
-    with prediction_column:
+            with mobile_heatmap_column:
+                st.subheader(text["gradcam"])
+                st.image(heatmap, width=250)
         st.subheader(f"{display_module} — {text['predicted_class']}")
-        render_featured_predictions(
-            result_probabilities, module, language, text, kingdom_probability
+        if kingdom_probability is None:
+            result_column, confidence_column = st.columns([4, 1])
+            with result_column:
+                render_prediction_card(result_class, module, language, text)
+            confidence_column.metric(text["confidence"], f"{result_confidence:.1%}")
+        else:
+            result_column, confidence_column, domain_column = st.columns([3, 1, 1])
+            with result_column:
+                render_prediction_card(result_class, module, language, text)
+            confidence_column.metric(
+                text["filtered_confidence"], f"{result_confidence:.1%}"
+            )
+            domain_column.metric(
+                text["category_probability"], f"{kingdom_probability:.1%}"
+            )
+            if kingdom_probability < 0.5:
+                st.warning(text["category_mismatch"].format(domain=text[domain]))
+        render_top_predictions(
+            result_probabilities, module, language, text, limit=10, offset=0
         )
-        if kingdom_probability is not None and kingdom_probability < 0.5:
-            st.warning(text["category_mismatch"].format(domain=text[domain]))
-    render_top_predictions(
-        result_probabilities, module, language, text, limit=5, offset=3
-    )
+    else:
+        explanation_column, prediction_column = st.columns(2, vertical_alignment="top")
+        with explanation_column:
+            if heatmap is not None:
+                st.subheader(text["gradcam"])
+                st.image(heatmap, width=250)
+        with prediction_column:
+            st.subheader(f"{display_module} — {text['predicted_class']}")
+            render_featured_predictions(
+                result_probabilities, module, language, text, kingdom_probability
+            )
+            if kingdom_probability is not None and kingdom_probability < 0.5:
+                st.warning(text["category_mismatch"].format(domain=text[domain]))
+        render_top_predictions(
+            result_probabilities, module, language, text, limit=5, offset=3
+        )
     if warnings:
         st.warning(text["unreliable"])
     st.caption(text["review"])
