@@ -802,7 +802,7 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
     with explanation_column:
         if heatmap is not None:
             st.subheader(text["gradcam"])
-            st.image(heatmap, width=250)
+            st.image(heatmap, width="stretch")
     with prediction_column:
         st.subheader(f"{display_module} — {text['predicted_class']}")
         render_featured_predictions(
