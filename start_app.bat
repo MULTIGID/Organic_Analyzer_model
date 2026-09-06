@@ -1,18 +1,41 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
+title Organic Analyzer
 
 set "APP_PYTHON=%~dp0.venv\Scripts\python.exe"
 
 if not exist "%APP_PYTHON%" (
     echo Virtual environment not found.
-    echo Create .venv and install the packages from requirements.txt first.
+    echo Run install.bat first.
     echo.
     echo Віртуальне середовище не знайдено.
-    echo Спочатку створіть .venv та встановіть пакети з requirements.txt.
+    echo Спочатку запустіть install.bat.
     pause
     exit /b 1
 )
+
+if not exist "%~dp0app.py" (
+    echo app.py was not found. Download or copy the complete project.
+    echo app.py не знайдено. Завантажте або скопіюйте весь проєкт.
+    pause
+    exit /b 1
+)
+
+if not exist "%~dp0checkpoints\inaturalist\resnet50_inaturalist_best.pt" (
+    echo Warning: the iNaturalist checkpoint is missing.
+    echo Увага: checkpoint iNaturalist відсутній.
+)
+if not exist "%~dp0checkpoints\bioscan\bioscan_species_resnet50_best.pt" (
+    echo Warning: the BIOSCAN checkpoint is missing.
+    echo Увага: checkpoint BIOSCAN відсутній.
+)
+if not exist "%~dp0checkpoints\bioscan\classes.json" (
+    echo Warning: the BIOSCAN class dictionary is missing.
+    echo Увага: словник класів BIOSCAN відсутній.
+)
+echo.
 
 echo Starting Biological Image Analyzer...
 echo Open http://localhost:8501 if the browser does not open automatically.

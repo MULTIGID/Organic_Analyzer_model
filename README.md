@@ -29,18 +29,37 @@ Training datasets are not required to run image analysis. GPU acceleration is op
 
 ## Run the application
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
+### Windows: installation without terminal commands
+
+1. Install 64-bit Python 3.12 and enable **Add Python to PATH** in the installer.
+2. Download or clone the complete repository.
+3. Double-click `install.bat`. It creates `.venv` and installs all packages automatically. Run it only once, or again when `requirements.txt` changes.
+4. Add the inference files using the structure below.
+5. Double-click `start_app.bat` whenever you want to start the application. Keep its console window open while the application is in use; closing it stops the local server.
+
+```text
+checkpoints/
+├── inaturalist/
+│   └── resnet50_inaturalist_best.pt
+└── bioscan/
+    ├── bioscan_species_resnet50_best.pt
+    └── classes.json
 ```
 
-The checkpoints must be stored under `checkpoints/inaturalist` and `checkpoints/bioscan`.
+The application normally opens `http://localhost:8501` automatically. Other devices on the same local network can use `http://COMPUTER_IP:8501` if Windows Firewall permits the connection.
+
+### Manual or Linux launch
+
+Create a virtual environment, install `requirements.txt`, and run `python -m streamlit run app.py`. The BAT files are intended for Windows only.
+
+The training datasets are not needed for inference. Only the three files listed above are required.
 
 ## Project structure
 
 ```text
 app.py                     Streamlit interface
+install.bat                One-click Windows environment setup
+start_app.bat              One-click Windows application launcher
 models/inaturalist/        Training configuration and entry points
 models/bioscan/            BIOSCAN configuration, data loader, training and evaluation
 src/                       Model, data, inference, taxonomy, and Grad-CAM code

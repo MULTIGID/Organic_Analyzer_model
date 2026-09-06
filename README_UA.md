@@ -29,18 +29,37 @@
 
 ## Запуск застосунку
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
+### Windows: установлення без команд у терміналі
+
+1. Установіть 64-бітний Python 3.12 і ввімкніть **Add Python to PATH** у програмі встановлення.
+2. Завантажте або клонуйте весь репозиторій.
+3. Двічі клацніть `install.bat`. Він автоматично створить `.venv` та встановить усі пакети. Його достатньо виконати один раз або повторно після зміни `requirements.txt`.
+4. Додайте файли для розпізнавання за наведеною нижче структурою.
+5. Для наступних запусків двічі клацайте `start_app.bat`. Не закривайте його консольне вікно під час роботи: закриття зупинить локальний сервер.
+
+```text
+checkpoints/
+├── inaturalist/
+│   └── resnet50_inaturalist_best.pt
+└── bioscan/
+    ├── bioscan_species_resnet50_best.pt
+    └── classes.json
 ```
 
-Checkpoints мають бути розміщені в `checkpoints/inaturalist` і `checkpoints/bioscan`.
+Застосунок зазвичай автоматично відкриває `http://localhost:8501`. Інші пристрої в тій самій локальній мережі можуть використовувати `http://IP_КОМП’ЮТЕРА:8501`, якщо підключення дозволене Windows Firewall.
+
+### Ручний запуск або Linux
+
+Створіть віртуальне середовище, установіть пакети з `requirements.txt` і виконайте `python -m streamlit run app.py`. BAT-файли призначені лише для Windows.
+
+Навчальні датасети для розпізнавання не потрібні. Необхідні лише три зазначені вище файли.
 
 ## Структура проєкту
 
 ```text
 app.py                     Інтерфейс Streamlit
+install.bat                Автоматичне налаштування середовища у Windows
+start_app.bat              Автоматичний запуск застосунку у Windows
 models/inaturalist/        Конфігурація та команди навчання
 models/bioscan/            Конфігурація, дані, навчання та оцінювання BIOSCAN
 src/                       Код моделі, даних, inference, таксономії та Grad-CAM
