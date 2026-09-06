@@ -585,11 +585,12 @@ def render_prediction_card(
 
 def render_top_predictions(
     probabilities: dict[str, float], module: str, language: str,
-    text: dict[str, str], limit: int = 10,
+    text: dict[str, str], limit: int = 5, offset: int = 0,
 ) -> None:
     st.markdown(f"#### {text['top_predictions']}")
-    ranked = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)[:limit]
-    for rank, (class_name, probability) in enumerate(ranked, start=1):
+    ranked = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)
+    selected = ranked[offset:offset + limit]
+    for rank, (class_name, probability) in enumerate(selected, start=offset + 1):
         display_name, _ = prediction_class_details(class_name, module, language)
         result_column, search_column = st.columns([4, 1], vertical_alignment="center")
         with result_column:
@@ -598,6 +599,47 @@ def render_top_predictions(
         with search_column:
             search_url = f"https://www.google.com/search?q={quote_plus(display_name)}"
             st.link_button(text["google_search"], search_url, use_container_width=True)
+
+
+def render_featured_predictions(
+    probabilities: dict[str, float], module: str, language: str,
+    text: dict[str, str], domain_probability: float | None,
+) -> None:
+    ranked = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)[:3]
+    best_class, best_probability = ranked[0]
+    with st.container(border=True):
+        render_prediction_card(best_class, module, language, text)
+        metric_columns = st.columns(2)
+        confidence_label = (
+            text["filtered_confidence"]
+            if domain_probability is not None else text["confidence"]
+        )
+        metric_columns[0].metric(confidence_label, f"{best_probability:.1%}")
+        if domain_probability is not None:
+            metric_columns[1].metric(
+                text["category_probability"], f"{domain_probability:.1%}"
+            )
+        best_name, _ = prediction_class_details(best_class, module, language)
+        st.link_button(
+            text["google_search"],
+            f"https://www.google.com/search?q={quote_plus(best_name)}",
+            use_container_width=True,
+        )
+
+        for rank, (class_name, probability) in enumerate(ranked[1:], start=2):
+            display_name, _ = prediction_class_details(class_name, module, language)
+            result_column, search_column = st.columns(
+                [4, 1], vertical_alignment="center"
+            )
+            with result_column:
+                st.markdown(f"**{rank}. {display_name}** — {probability:.1%}")
+                st.progress(float(probability))
+            with search_column:
+                st.link_button(
+                    text["google_search"],
+                    f"https://www.google.com/search?q={quote_plus(display_name)}",
+                    use_container_width=True,
+                )
 
 
 with st.sidebar:
@@ -696,24 +738,27 @@ if not checkpoint_path.exists():
     command = TRAIN_COMMANDS[module]
     st.error(text["checkpoint"].format(module=display_module, command=command))
     st.stop()
-st.markdown(
-    f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
-)
-uploaded = st.file_uploader(
-    text["upload"].format(module=display_module),
-    type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
-    key=UPLOAD_WIDGET_KEY,
-    label_visibility="collapsed",
-    max_upload_size=20,
-    on_change=cache_uploaded_image,
-)
-enable_page_wide_image_drop()
-if uploaded is not None:
-    st.session_state[UPLOAD_CACHE_KEY] = uploaded.getvalue()
-    st.session_state[UPLOAD_NAME_KEY] = uploaded.name
-uploaded_bytes = st.session_state.get(UPLOAD_CACHE_KEY)
+upload_column, preview_column = st.columns([3, 1], vertical_alignment="top")
+with upload_column:
+    st.markdown(
+        f"### {MODULE_ICONS[module]} {text['upload'].format(module=display_module)}"
+    )
+    uploaded = st.file_uploader(
+        text["upload"].format(module=display_module),
+        type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
+        key=UPLOAD_WIDGET_KEY,
+        label_visibility="collapsed",
+        max_upload_size=20,
+        on_change=cache_uploaded_image,
+    )
+    enable_page_wide_image_drop()
+    if uploaded is not None:
+        st.session_state[UPLOAD_CACHE_KEY] = uploaded.getvalue()
+        st.session_state[UPLOAD_NAME_KEY] = uploaded.name
+    uploaded_bytes = st.session_state.get(UPLOAD_CACHE_KEY)
+    if uploaded_bytes is None:
+        st.write(text["upload_hint"])
 if uploaded_bytes is None:
-    st.write(text["upload_hint"])
     st.stop()
 if len(uploaded_bytes) > MAX_UPLOAD_BYTES:
     st.error(text["file_too_large"])
@@ -727,8 +772,7 @@ warning_codes = validate_module_input(image, module)
 warnings = [text[f"warning_{code}"] for code in warning_codes]
 for warning in warnings:
     st.warning(warning)
-left, right = st.columns(2)
-with left:
+with preview_column:
     st.subheader(text["uploaded"])
     st.image(image, width=250)
 
@@ -754,25 +798,21 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
         heatmap = predictor.grad_cam(
             image, result_class, intensity=gradcam_intensity
         )
-    st.subheader(f"{display_module} — {text['predicted_class']}")
-    if kingdom_probability is None:
-        result_column, confidence_column = st.columns([4, 1])
-        with result_column:
-            render_prediction_card(result_class, module, language, text)
-        confidence_column.metric(text["confidence"], f"{result_confidence:.1%}")
-    else:
-        result_column, confidence_column, domain_column = st.columns([3, 1, 1])
-        with result_column:
-            render_prediction_card(result_class, module, language, text)
-        confidence_column.metric(text["filtered_confidence"], f"{result_confidence:.1%}")
-        domain_column.metric(text["category_probability"], f"{kingdom_probability:.1%}")
-        if kingdom_probability < 0.5:
-            st.warning(text["category_mismatch"].format(domain=text[domain]))
-    render_top_predictions(result_probabilities, module, language, text)
-    if heatmap is not None:
-        with right:
+    explanation_column, prediction_column = st.columns(2, vertical_alignment="top")
+    with explanation_column:
+        if heatmap is not None:
             st.subheader(text["gradcam"])
             st.image(heatmap, width=250)
+    with prediction_column:
+        st.subheader(f"{display_module} — {text['predicted_class']}")
+        render_featured_predictions(
+            result_probabilities, module, language, text, kingdom_probability
+        )
+        if kingdom_probability is not None and kingdom_probability < 0.5:
+            st.warning(text["category_mismatch"].format(domain=text[domain]))
+    render_top_predictions(
+        result_probabilities, module, language, text, limit=5, offset=3
+    )
     if warnings:
         st.warning(text["unreliable"])
     st.caption(text["review"])
