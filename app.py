@@ -358,7 +358,7 @@ TRAIN_COMMANDS = {
 }
 DOMAIN_MODELS = {
     "animals": ("iNaturalist Full",),
-    "insects": ("BIOSCAN-5M",),
+    "insects": ("BIOSCAN-5M", "iNaturalist Full"),
     "plants": ("iNaturalist Full",),
     "mushrooms": ("iNaturalist Full",),
 }

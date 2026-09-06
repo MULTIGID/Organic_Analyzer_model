@@ -22,6 +22,16 @@ def test_animal_filter_returns_mass_and_normalized_probabilities():
     assert set(filtered) == set(list(PROBABILITIES)[:2])
 
 
+def test_insect_filter_uses_insecta_taxonomic_class():
+    insect = "00005_Animalia_Arthropoda_Insecta_Test_Test_Apis_mellifera"
+    probabilities = {**PROBABILITIES, insect: 0.25}
+
+    filtered, mass = filter_inaturalist_probabilities(probabilities, "insects")
+
+    assert mass == pytest.approx(0.25)
+    assert filtered == {insect: pytest.approx(1.0)}
+
+
 def test_unknown_domain_is_rejected():
     with pytest.raises(ValueError, match="Unsupported"):
         filter_inaturalist_probabilities(PROBABILITIES, "histology")
