@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Biological Image Analyzer",
@@ -109,6 +110,11 @@ background_styles = (
         border: 1px dashed light-dark(rgba(37, 99, 235, 0.55), rgba(96, 165, 250, 0.62));
         border-radius: 1rem;
         background: light-dark(rgba(241, 245, 249, 0.90), rgba(30, 41, 59, 0.72));
+    }
+    [data-testid="stMainBlockContainer"].global-file-drag-active {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.25rem rgba(96, 165, 250, 0.24),
+                    0 1rem 3rem light-dark(rgba(15, 23, 42, 0.18), rgba(0, 0, 0, 0.38));
     }
     .module-card, .model-status {
         margin: 0.8rem 0;
@@ -271,7 +277,8 @@ TEXT = {
         "bioscan_input": "Upload a clear photograph of one insect specimen, preferably centered and fully visible.",
         "checkpoint": "The {module} checkpoint was not found. Train it first with `{command}`.",
         "checkpoint_damaged": "The {module} checkpoint could not be loaded. The file may be damaged or incompatible. Restore a verified checkpoint and try again.",
-        "upload": "Upload an image for {module}", "upload_hint": "Upload one image to begin.",
+        "upload": "Upload an image for {module}",
+        "upload_hint": "Choose a file or drag an image anywhere onto the page.",
         "bad_image": "The uploaded file could not be read as an image.",
         "file_too_large": "The uploaded file is larger than 20 MB. Choose a smaller image.",
         "small_image": "The image is too small for reliable analysis.",
@@ -320,7 +327,7 @@ TEXT = {
         "checkpoint": "Checkpoint {module} не знайдено. Спочатку виконайте `{command}`.",
         "checkpoint_damaged": "Checkpoint {module} не вдалося завантажити. Файл може бути пошкодженим або несумісним. Відновіть перевірений checkpoint і повторіть спробу.",
         "upload": "Завантажте зображення для {module}",
-        "upload_hint": "Завантажте одне зображення.",
+        "upload_hint": "Виберіть файл або перетягніть зображення в будь-яке місце сторінки.",
         "bad_image": "Завантажений файл не вдалося прочитати як зображення.",
         "file_too_large": "Розмір завантаженого файла перевищує 20 МБ. Виберіть менше зображення.",
         "small_image": "Зображення замале для надійного аналізу.",
@@ -348,6 +355,9 @@ TEXT = {
 }
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+UPLOAD_WIDGET_KEY = "analysis-image-uploader"
+UPLOAD_CACHE_KEY = "analysis-image-bytes"
+UPLOAD_NAME_KEY = "analysis-image-name"
 CONFIG_NAMES = {
     "iNaturalist Full": "models/inaturalist/config.yaml",
     "BIOSCAN-5M": "models/bioscan/config.yaml",
@@ -451,6 +461,90 @@ def load_multiclass_predictor(
 
 def readable_class(class_name: str, language: str) -> str:
     return class_name.replace("___", " — ").replace("_", " ")
+
+
+def cache_uploaded_image() -> None:
+    uploaded_file = st.session_state.get(UPLOAD_WIDGET_KEY)
+    if uploaded_file is None:
+        st.session_state.pop(UPLOAD_CACHE_KEY, None)
+        st.session_state.pop(UPLOAD_NAME_KEY, None)
+        return
+    st.session_state[UPLOAD_CACHE_KEY] = uploaded_file.getvalue()
+    st.session_state[UPLOAD_NAME_KEY] = uploaded_file.name
+
+
+def enable_page_wide_image_drop() -> None:
+    """Forward an image dropped anywhere on the page to the file uploader."""
+    components.html(
+        r"""
+        <script>
+        (() => {
+            const root = window.parent;
+            const doc = root.document;
+            const stateKey = "__organicAnalyzerPageDrop";
+            const previous = root[stateKey];
+            if (previous) {
+                doc.removeEventListener("dragenter", previous.dragenter, true);
+                doc.removeEventListener("dragover", previous.dragover, true);
+                doc.removeEventListener("dragleave", previous.dragleave, true);
+                doc.removeEventListener("drop", previous.drop, true);
+            }
+
+            const main = () => doc.querySelector('[data-testid="stMainBlockContainer"]');
+            const containsFiles = event =>
+                Array.from(event.dataTransfer?.types || []).includes("Files");
+            const setActive = active => main()?.classList.toggle(
+                "global-file-drag-active", active
+            );
+            let dragDepth = 0;
+            const dragenter = event => {
+                if (!containsFiles(event)) return;
+                event.preventDefault();
+                event.stopPropagation();
+                dragDepth += 1;
+                setActive(true);
+            };
+            const dragover = event => {
+                if (!containsFiles(event)) return;
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = "copy";
+            };
+            const dragleave = event => {
+                if (!containsFiles(event)) return;
+                event.stopPropagation();
+                dragDepth = Math.max(0, dragDepth - 1);
+                if (dragDepth === 0) setActive(false);
+            };
+            const drop = event => {
+                if (!containsFiles(event)) return;
+                event.preventDefault();
+                event.stopPropagation();
+                dragDepth = 0;
+                setActive(false);
+                const input = doc.querySelector(
+                    '[data-testid="stFileUploader"] input[type="file"]'
+                );
+                const file = Array.from(event.dataTransfer.files || []).find(item =>
+                    item.type.startsWith("image/") ||
+                    /\.(png|jpe?g|tiff?|webp)$/i.test(item.name)
+                );
+                if (!input || !file) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+            };
+            const handlers = {dragenter, dragover, dragleave, drop};
+            root[stateKey] = handlers;
+            for (const [name, handler] of Object.entries(handlers)) {
+                doc.addEventListener(name, handler, true);
+            }
+        })();
+        </script>
+        """,
+        height=0,
+    )
 
 
 def prediction_class_details(
@@ -608,18 +702,24 @@ st.markdown(
 uploaded = st.file_uploader(
     text["upload"].format(module=display_module),
     type=("png", "jpg", "jpeg", "tif", "tiff", "webp"),
-    key=f"uploader-{module}",
+    key=UPLOAD_WIDGET_KEY,
     label_visibility="collapsed",
     max_upload_size=20,
+    on_change=cache_uploaded_image,
 )
-if uploaded is None:
+enable_page_wide_image_drop()
+if uploaded is not None:
+    st.session_state[UPLOAD_CACHE_KEY] = uploaded.getvalue()
+    st.session_state[UPLOAD_NAME_KEY] = uploaded.name
+uploaded_bytes = st.session_state.get(UPLOAD_CACHE_KEY)
+if uploaded_bytes is None:
     st.write(text["upload_hint"])
     st.stop()
-if uploaded.size > MAX_UPLOAD_BYTES:
+if len(uploaded_bytes) > MAX_UPLOAD_BYTES:
     st.error(text["file_too_large"])
     st.stop()
 try:
-    image = Image.open(BytesIO(uploaded.getvalue())).convert("RGB")
+    image = Image.open(BytesIO(uploaded_bytes)).convert("RGB")
 except (UnidentifiedImageError, OSError):
     st.error(text["bad_image"])
     st.stop()
@@ -630,7 +730,7 @@ for warning in warnings:
 left, right = st.columns(2)
 with left:
     st.subheader(text["uploaded"])
-    st.image(image, width=200)
+    st.image(image, width=250)
 
 if st.button(text["analyze"], type="primary", use_container_width=True):
     with st.spinner(text["running"].format(module=display_module)):
@@ -672,7 +772,7 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
     if heatmap is not None:
         with right:
             st.subheader(text["gradcam"])
-            st.image(heatmap, width=200)
+            st.image(heatmap, width=250)
     if warnings:
         st.warning(text["unreliable"])
     st.caption(text["review"])
