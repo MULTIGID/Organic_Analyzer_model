@@ -1,0 +1,26 @@
+project:
+  name: "BIOSCAN-5M Insect Species ResNet-50"
+  seed: 42
+data:
+  metadata: "D:/Datasets/BIOSCAN-5M/metadata_image_only.parquet"
+  image_dir: "D:/Datasets/BIOSCAN-5M/images"
+  classes: "../../checkpoints/bioscan/classes.json"
+  image_size: 224
+model:
+  pretrained: true
+  num_classes: 11846
+training:
+  epochs: 10
+  batch_size: 3
+  accumulation: 8
+  learning_rate: 0.0003
+  weight_decay: 0.01
+  num_workers: 6
+  use_amp: true
+paths:
+  checkpoint: "../../checkpoints/bioscan/bioscan_species_resnet50_best.pt"
+  last_checkpoint: "../../checkpoints/bioscan/bioscan_species_resnet50_last.pt"
+  results_dir: "../../results/bioscan"
+checkpoint_metadata:
+  epoch: 10
+  best_accuracy: 0.718303178152741

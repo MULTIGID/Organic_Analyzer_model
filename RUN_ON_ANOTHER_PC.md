@@ -2,6 +2,12 @@
 
 The archive contains the application code and inference checkpoints. Training datasets are not required for image analysis.
 
+Required inference files:
+
+- `checkpoints/inaturalist/resnet50_inaturalist_best.pt`
+- `checkpoints/bioscan/bioscan_species_resnet50_best.pt`
+- `checkpoints/bioscan/classes.json`
+
 ## Requirements
 
 - Windows 10 or Windows 11
@@ -57,6 +63,8 @@ If CUDA is unavailable, the application automatically uses CPU.
 # Запуск застосунку на іншому комп'ютері Windows
 
 Архів містить код застосунку та checkpoints для розпізнавання. Навчальні датасети для аналізу зображень не потрібні.
+
+Для роботи обох моделей в архіві мають бути checkpoints iNaturalist і BIOSCAN, а також `checkpoints/bioscan/classes.json`.
 
 1. Встановіть 64-бітний Python 3.12 або 3.13; рекомендовано Python 3.12.
 2. Розпакуйте архів.

@@ -47,9 +47,15 @@ def load_checkpoint(
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Model checkpoint not found: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    num_classes = int(checkpoint.get("num_classes", 1))
+    model_state = checkpoint.get("model_state")
+    if model_state is None:
+        model_state = checkpoint.get("model")
+    if model_state is None:
+        raise KeyError("Checkpoint does not contain model_state or model weights")
+    inferred_classes = model_state["fc.weight"].shape[0]
+    num_classes = int(checkpoint.get("num_classes", inferred_classes))
     model = create_resnet50(pretrained=False, num_classes=num_classes)
-    model.load_state_dict(checkpoint["model_state"])
+    model.load_state_dict(model_state)
     model.to(device)
     if load_optimizer is not None and "optimizer_state" in checkpoint:
         load_optimizer.load_state_dict(checkpoint["optimizer_state"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 import torch
@@ -19,11 +20,35 @@ class MulticlassPrediction:
 
 
 class MulticlassPredictor:
-    def __init__(self, checkpoint_path: str | Path, device: torch.device, image_size: int) -> None:
+    def __init__(
+        self,
+        checkpoint_path: str | Path,
+        device: torch.device,
+        image_size: int,
+        class_names_path: str | Path | None = None,
+    ) -> None:
         self.device = device
         self.model, metadata = load_checkpoint(checkpoint_path, device)
         self.model.eval()
-        self.class_names = list(metadata["class_names"])
+        class_names = metadata.get("class_names")
+        if class_names is None and class_names_path is not None:
+            mapping = json.loads(Path(class_names_path).read_text(encoding="utf-8"))
+            if not isinstance(mapping, dict):
+                raise ValueError("Class names file must contain a name-to-index mapping")
+            class_names = [None] * len(mapping)
+            for name, index in mapping.items():
+                if not isinstance(index, int) or not 0 <= index < len(mapping):
+                    raise ValueError("Class indices must be contiguous integers from zero")
+                if class_names[index] is not None:
+                    raise ValueError(f"Duplicate class index: {index}")
+                class_names[index] = str(name)
+            if any(name is None for name in class_names):
+                raise ValueError("Class indices must be contiguous integers from zero")
+        if class_names is None:
+            raise KeyError("Checkpoint does not contain class_names")
+        if len(class_names) != self.model.fc.out_features:
+            raise ValueError("Class names count does not match checkpoint output size")
+        self.class_names = list(class_names)
         self.class_indices = {name: index for index, name in enumerate(self.class_names)}
         _, self.transform = build_transforms(image_size)
 

@@ -10,7 +10,7 @@ from urllib.parse import quote_plus
 import streamlit as st
 
 st.set_page_config(
-    page_title="Histology ResNet-50 Analyzer",
+    page_title="Biological Image Analyzer",
     page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -253,7 +253,7 @@ TEXT = {
         "disclaimer": "For research and education only. The result is a model prediction and requires expert review.",
         "settings": "Analysis settings", "language": "Language / Мова", "model": "Model",
         "category": "Domain",
-        "animals": "Animals", "plants": "Plants", "mushrooms": "Mushrooms",
+        "animals": "Animals", "insects": "Insects", "plants": "Plants", "mushrooms": "Mushrooms",
         "ready": "Model ready", "training_required": "Training required",
         "classes": "classes", "best_accuracy": "Best validation accuracy",
         "checkpoint_updated": "Checkpoint date", "architecture": "ResNet-50",
@@ -267,6 +267,8 @@ TEXT = {
         "device": "Device",
         "inaturalist_task": "Recognizes 10,000 species of animals, plants, fungi and other organisms from iNaturalist 2021 Full.",
         "inaturalist_input": "Upload a clear nature photograph in which the organism is the main subject.",
+        "bioscan_task": "Recognizes 11,846 insect species from the image-only labeled subset of BIOSCAN-5M. DNA data is not used.",
+        "bioscan_input": "Upload a clear photograph of one insect specimen, preferably centered and fully visible.",
         "checkpoint": "The {module} checkpoint was not found. Train it first with `{command}`.",
         "checkpoint_damaged": "The {module} checkpoint could not be loaded. The file may be damaged or incompatible. Restore a verified checkpoint and try again.",
         "upload": "Upload an image for {module}", "upload_hint": "Upload one image to begin.",
@@ -299,7 +301,7 @@ TEXT = {
         "disclaimer": "Лише для досліджень і навчання. Результат є прогнозом моделі та потребує перевірки фахівцем.",
         "settings": "Налаштування аналізу", "language": "Мова / Language", "model": "Модель",
         "category": "Напрям",
-        "animals": "Тварини", "plants": "Рослини", "mushrooms": "Гриби",
+        "animals": "Тварини", "insects": "Комахи", "plants": "Рослини", "mushrooms": "Гриби",
         "ready": "Модель готова", "training_required": "Потрібне навчання",
         "classes": "класів", "best_accuracy": "Найкраща валідаційна точність",
         "checkpoint_updated": "Дата checkpoint", "architecture": "ResNet-50",
@@ -313,6 +315,8 @@ TEXT = {
         "device": "Пристрій",
         "inaturalist_task": "Розпізнає 10 000 видів тварин, рослин, грибів та інших організмів із iNaturalist 2021 Full.",
         "inaturalist_input": "Завантажте чітку фотографію з природи, де організм є головним об’єктом кадру.",
+        "bioscan_task": "Розпізнає 11 846 видів комах за розміченою частиною зображень BIOSCAN-5M. Дані ДНК не використовуються.",
+        "bioscan_input": "Завантажте чітку фотографію одного зразка комахи, бажано по центру та повністю в кадрі.",
         "checkpoint": "Checkpoint {module} не знайдено. Спочатку виконайте `{command}`.",
         "checkpoint_damaged": "Checkpoint {module} не вдалося завантажити. Файл може бути пошкодженим або несумісним. Відновіть перевірений checkpoint і повторіть спробу.",
         "upload": "Завантажте зображення для {module}",
@@ -346,20 +350,25 @@ TEXT = {
 PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_NAMES = {
     "iNaturalist Full": "models/inaturalist/config.yaml",
+    "BIOSCAN-5M": "models/bioscan/config.yaml",
 }
 TRAIN_COMMANDS = {
     "iNaturalist Full": "python models/inaturalist/train.py",
+    "BIOSCAN-5M": "python -m models.bioscan.train",
 }
 DOMAIN_MODELS = {
     "animals": ("iNaturalist Full",),
+    "insects": ("BIOSCAN-5M",),
     "plants": ("iNaturalist Full",),
     "mushrooms": ("iNaturalist Full",),
 }
 MODULE_TASK_KEYS = {
     "iNaturalist Full": "inaturalist",
+    "BIOSCAN-5M": "bioscan",
 }
 MODULE_ICONS = {
     "iNaturalist Full": "🦋",
+    "BIOSCAN-5M": "🐞",
 }
 
 MODULE_DISPLAY_NAMES = {"EN": {}, "УКР": {}}
@@ -372,6 +381,7 @@ MODULE_CLASS_DESCRIPTIONS = {"EN": {}, "УКР": {}}
 
 MODULE_DATASETS = {
     "iNaturalist Full": "iNaturalist 2021 Full",
+    "BIOSCAN-5M": "BIOSCAN-5M (image-only)",
 }
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
@@ -382,6 +392,11 @@ def checkpoint_summary(
     history_path = config.path("paths", "results_dir") / "training_history.json"
     best_accuracy = None
     training_epoch = None
+    checkpoint_metadata = config.raw.get("checkpoint_metadata", {})
+    if checkpoint_metadata.get("best_accuracy") is not None:
+        best_accuracy = float(checkpoint_metadata["best_accuracy"])
+    if checkpoint_metadata.get("epoch") is not None:
+        training_epoch = int(checkpoint_metadata["epoch"])
     if history_path.exists():
         try:
             history_data = json.loads(history_path.read_text(encoding="utf-8"))
@@ -423,9 +438,14 @@ def load_multiclass_predictor(
 ) -> MulticlassPredictor:
     del checkpoint_mtime
     config = load_config(config_path)
+    classes_path = config.section("data").get("classes")
+    resolved_classes_path = (
+        config.path("data", "classes") if classes_path is not None else None
+    )
     return MulticlassPredictor(
         config.path("paths", "checkpoint"), resolve_device("auto"),
         int(config.section("data")["image_size"]),
+        resolved_classes_path,
     )
 
 
@@ -621,9 +641,13 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
         if predictor is None:
             st.stop()
         prediction = predictor.predict(image)
-        result_probabilities, kingdom_probability = filter_inaturalist_probabilities(
-            prediction.probabilities, domain
-        )
+        if module == "iNaturalist Full":
+            result_probabilities, kingdom_probability = filter_inaturalist_probabilities(
+                prediction.probabilities, domain
+            )
+        else:
+            result_probabilities = prediction.probabilities
+            kingdom_probability = None
         result_class, result_confidence = max(
             result_probabilities.items(), key=lambda item: item[1]
         )
@@ -631,13 +655,19 @@ if st.button(text["analyze"], type="primary", use_container_width=True):
             image, result_class, intensity=gradcam_intensity
         )
     st.subheader(f"{display_module} — {text['predicted_class']}")
-    a, b, c = st.columns([3, 1, 1])
-    with a:
-        render_prediction_card(result_class, module, language, text)
-    b.metric(text["filtered_confidence"], f"{result_confidence:.1%}")
-    c.metric(text["category_probability"], f"{kingdom_probability:.1%}")
-    if kingdom_probability < 0.5:
-        st.warning(text["category_mismatch"].format(domain=text[domain]))
+    if kingdom_probability is None:
+        result_column, confidence_column = st.columns([4, 1])
+        with result_column:
+            render_prediction_card(result_class, module, language, text)
+        confidence_column.metric(text["confidence"], f"{result_confidence:.1%}")
+    else:
+        result_column, confidence_column, domain_column = st.columns([3, 1, 1])
+        with result_column:
+            render_prediction_card(result_class, module, language, text)
+        confidence_column.metric(text["filtered_confidence"], f"{result_confidence:.1%}")
+        domain_column.metric(text["category_probability"], f"{kingdom_probability:.1%}")
+        if kingdom_probability < 0.5:
+            st.warning(text["category_mismatch"].format(domain=text[domain]))
     render_top_predictions(result_probabilities, module, language, text)
     if heatmap is not None:
         with right:

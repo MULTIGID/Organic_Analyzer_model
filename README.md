@@ -1,17 +1,15 @@
 # Organic Analyzer Model
 
-A bilingual Streamlit application for biological-species classification with a ResNet-50 model trained on **iNaturalist 2021 Full**. The interface supports Animalia, Plantae, and Fungi filtering, top predictions, confidence indicators, input-quality warnings, Google search links, and Grad-CAM visualization.
+A bilingual Streamlit application for biological-species classification with dedicated ResNet-50 models trained on **iNaturalist 2021 Full** and the image-only labeled subset of **BIOSCAN-5M**. The interface supports animals, insects, plants and fungi, top predictions, confidence indicators, input-quality warnings, Google search links, and Grad-CAM visualization.
 
 Model output is intended for research and education and requires expert review.
 
-## Current and planned datasets
+## Current datasets
 
 | Status | Dataset | Purpose | Scale |
 |---|---|---|---:|
 | Current | iNaturalist 2021 Full | Classification of animals, plants, fungi, and other organisms | 10,000 classes; 2,686,843 training images |
-| Planned | BIOSCAN-5M | Insect classification and multimodal taxonomy research | 5,150,808 specimens |
-
-BIOSCAN-5M code and checkpoints will be added after its training pipeline and data layout are finalized.
+| Current | BIOSCAN-5M image-only labeled subset | Insect species classification without DNA input | 11,846 classes; 289,203 training images |
 
 ## Run the application
 
@@ -21,7 +19,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-The iNaturalist checkpoint must be stored at `checkpoints/inaturalist/resnet50_inaturalist_best.pt`.
+The checkpoints must be stored under `checkpoints/inaturalist` and `checkpoints/bioscan`.
 
 ## Train and evaluate iNaturalist
 
@@ -35,13 +33,27 @@ Update the dataset paths in `models/inaturalist/config.yaml`, then run:
 
 Use `--device cpu` without a compatible NVIDIA GPU.
 
+## Train and evaluate BIOSCAN-5M
+
+Update the dataset paths in `models/bioscan/config.yaml`, then run:
+
+```powershell
+.\.venv\Scripts\python.exe -m models.bioscan.train
+.\.venv\Scripts\python.exe -m models.bioscan.train --resume --epochs 20
+.\.venv\Scripts\python.exe -m models.bioscan.evaluate --device cuda
+```
+
+BIOSCAN training uses images and taxonomic species labels only; DNA barcodes are not used.
+
 ## Project structure
 
 ```text
 app.py                     Streamlit interface
 models/inaturalist/        Training configuration and entry points
+models/bioscan/            BIOSCAN configuration, data loader, training and evaluation
 src/                       Model, data, inference, taxonomy, and Grad-CAM code
 checkpoints/inaturalist/   Best and latest iNaturalist checkpoints
+checkpoints/bioscan/       Best/latest BIOSCAN checkpoints and class mapping
 results/inaturalist/       Training and evaluation outputs
 tests/                     Automated tests
 ```

@@ -1,17 +1,15 @@
 # Organic Analyzer Model
 
-Двомовний Streamlit-застосунок для класифікації біологічних видів за допомогою ResNet-50, навченої на **iNaturalist 2021 Full**. Інтерфейс підтримує фільтрацію за Animalia, Plantae і Fungi, найімовірніші прогнози, показники впевненості, перевірку якості вхідного зображення, пошук у Google та візуалізацію Grad-CAM.
+Двомовний Streamlit-застосунок для класифікації біологічних видів за допомогою окремих моделей ResNet-50, навчених на **iNaturalist 2021 Full** і розміченій частині зображень **BIOSCAN-5M**. Інтерфейс підтримує тварин, комах, рослини та гриби, найімовірніші прогнози, показники впевненості, перевірку якості зображення, пошук у Google та Grad-CAM.
 
 Результат моделі призначений для досліджень і навчання та потребує експертної перевірки.
 
-## Поточні й заплановані датасети
+## Поточні датасети
 
 | Статус | Датасет | Призначення | Масштаб |
 |---|---|---|---:|
 | Використовується | iNaturalist 2021 Full | Класифікація тварин, рослин, грибів та інших організмів | 10 000 класів; 2 686 843 навчальних зображення |
-| Заплановано | BIOSCAN-5M | Класифікація комах і мультимодальні таксономічні дослідження | 5 150 808 зразків |
-
-Код і checkpoints BIOSCAN-5M будуть додані після визначення структури даних та процесу навчання.
+| Використовується | Розмічена частина зображень BIOSCAN-5M | Класифікація видів комах без даних ДНК | 11 846 класів; 289 203 навчальних зображення |
 
 ## Запуск застосунку
 
@@ -21,7 +19,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-Checkpoint iNaturalist має бути розміщений у `checkpoints/inaturalist/resnet50_inaturalist_best.pt`.
+Checkpoints мають бути розміщені в `checkpoints/inaturalist` і `checkpoints/bioscan`.
 
 ## Навчання та оцінювання iNaturalist
 
@@ -35,13 +33,27 @@ Checkpoint iNaturalist має бути розміщений у `checkpoints/inat
 
 На комп’ютері без сумісної NVIDIA GPU використовуйте `--device cpu`.
 
+## Навчання та оцінювання BIOSCAN-5M
+
+Спочатку вкажіть шляхи до датасету у `models/bioscan/config.yaml`, а потім виконайте:
+
+```powershell
+.\.venv\Scripts\python.exe -m models.bioscan.train
+.\.venv\Scripts\python.exe -m models.bioscan.train --resume --epochs 20
+.\.venv\Scripts\python.exe -m models.bioscan.evaluate --device cuda
+```
+
+Для навчання BIOSCAN використовуються лише зображення й таксономічні мітки видів; ДНК-штрихкоди не використовуються.
+
 ## Структура проєкту
 
 ```text
 app.py                     Інтерфейс Streamlit
 models/inaturalist/        Конфігурація та команди навчання
+models/bioscan/            Конфігурація, дані, навчання та оцінювання BIOSCAN
 src/                       Код моделі, даних, inference, таксономії та Grad-CAM
 checkpoints/inaturalist/   Найкращий і останній checkpoints iNaturalist
+checkpoints/bioscan/       Checkpoints BIOSCAN і словник класів
 results/inaturalist/       Результати навчання та оцінювання
 tests/                     Автоматичні тести
 ```
