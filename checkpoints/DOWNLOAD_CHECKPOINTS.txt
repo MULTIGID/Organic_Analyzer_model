@@ -2,7 +2,7 @@ CHECKPOINT DOWNLOAD / ЗАВАНТАЖЕННЯ CHECKPOINTS
 ================================================
 
 Download link / Посилання для завантаження:
-[PASTE_CHECKPOINT_DOWNLOAD_LINK_HERE]
+https://drive.google.com/drive/folders/11pMCSg3SJcegfI4MJ_mlVrJWdqkn1bLi?usp=drive_link
 
 EN
 --
