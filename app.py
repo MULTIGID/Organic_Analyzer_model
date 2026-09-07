@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import base64
 import html
+import ipaddress
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -236,6 +238,56 @@ page_loader.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
+def log_client_connection() -> None:
+    """Write one privacy-minimal access entry for the current browser session."""
+    session_key = "access-logged"
+    if st.session_state.get(session_key):
+        return
+
+    raw_address = st.context.ip_address
+    if not isinstance(raw_address, str) or not raw_address.strip():
+        client_address = "local"
+    else:
+        try:
+            client_address = str(ipaddress.ip_address(raw_address))
+        except ValueError:
+            client_address = "unknown"
+
+    try:
+        log_directory = Path(__file__).resolve().parent / "logs"
+        log_directory.mkdir(parents=True, exist_ok=True)
+        logger = logging.getLogger("organic_analyzer.access")
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        log_path = log_directory / "access.log"
+        if not any(
+            isinstance(handler, RotatingFileHandler)
+            and Path(handler.baseFilename) == log_path
+            for handler in logger.handlers
+        ):
+            handler = RotatingFileHandler(
+                log_path,
+                maxBytes=5 * 1024 * 1024,
+                backupCount=3,
+                encoding="utf-8",
+            )
+            handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s\tip=%(message)s",
+                    datefmt="%Y-%m-%dT%H:%M:%S%z",
+                )
+            )
+            logger.addHandler(handler)
+        logger.info(client_address)
+    except OSError:
+        logging.exception("Could not write the access log")
+    finally:
+        st.session_state[session_key] = True
+
+
+log_client_connection()
 
 # Load the ML stack only after the page styles and custom loader reach the
 # browser. Importing PyTorch can otherwise leave Streamlit's default loader

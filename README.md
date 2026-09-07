@@ -54,6 +54,10 @@ Create a virtual environment, install `requirements.txt`, and run `python -m str
 
 The training datasets are not needed for inference. Only the three files listed above are required.
 
+## Connection log
+
+The application records the connection time and client IP address once per browser session in `logs/access.log`. Localhost connections are recorded as `local`. The log rotates automatically at 5 MB and retains up to three older files. IP addresses can be personal data, so disclose this logging to users and define an appropriate retention period before making the application publicly accessible.
+
 ## Project structure
 
 ```text
